@@ -15,17 +15,19 @@ node dev/smoke.mjs        # 전체 흐름 자동 점검 (빈 DB 에서 실행: .
 
 로컬 데이터는 `.dev/` 에 쌓인다 (git 제외). 모바일 화면은 `http://localhost:8795/__m?u=/exams` 로 확인.
 
-## 처음 배포할 때 (한 번만)
+## 배포
+
+https://donggonga.hsk9867.workers.dev 에 배포되어 있다 (D1 `donggonga-db`, 시크릿 `ADMIN_PASSWORD`·`SESSION_SECRET` 등록됨).
 
 ```
-npx wrangler d1 create donggonga-db          # 나온 database_id 를 wrangler.jsonc 에 넣기
-npx wrangler r2 bucket create donggonga-files
-npx wrangler d1 migrations apply donggonga-db --remote
-npx wrangler secret bulk secrets.json        # {"ADMIN_PASSWORD":"...","SESSION_SECRET":"긴 무작위 문자열"} — 올린 뒤 파일 삭제
-npx wrangler deploy
+npx wrangler deploy                                        # 수정 반영
+npx wrangler d1 migrations apply donggonga-db --remote     # migrations/ 에 새 파일을 추가했을 때
 ```
 
-이후 수정 반영은 `npx wrangler deploy` 만 하면 된다.
+시험지 파일은 지금 D1 `file_chunks` 테이블에 900KB 조각으로 저장한다 (계정에 R2 가 켜져 있지 않아서).
+D1 무료 요금제는 DB 하나에 500MB 까지라 시험지가 수백 건 쌓이기 전에 R2 로 옮겨야 한다:
+Cloudflare 대시보드에서 R2 활성화 → `npx wrangler r2 bucket create donggonga-files` → `wrangler.jsonc` 의 `r2_buckets` 주석 해제 → 배포.
+(기존 파일은 D1 에 남으므로 옮기는 작업이 한 번 필요하다.)
 
 ## 관리자가 하는 일
 

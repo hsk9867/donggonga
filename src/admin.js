@@ -17,7 +17,7 @@ function shell(ctx, title, body) {
 <meta name="robots" content="noindex"><title>${esc(title)} | ${esc(ctx.S.site.name)} 관리자</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="/css/style.css?v=4"><link rel="stylesheet" href="/css/admin.css?v=4"></head>
+<link rel="stylesheet" href="/css/style.css?v=5"><link rel="stylesheet" href="/css/admin.css?v=5"></head>
 <body class="adm">
 <header class="adm-hdr"><a class="adm-brand" href="/admin"><span class="brand-mark">동</span> ${esc(ctx.S.site.name)} 관리자</a>
   <div class="adm-hdr-r"><a href="/" target="_blank" rel="noopener">사이트 보기</a>
@@ -43,7 +43,7 @@ export async function handleAdmin(ctx) {
     const page = (error = '') => html(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex"><title>관리자 로그인</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="/css/style.css?v=4"><link rel="stylesheet" href="/css/admin.css?v=4"></head>
+<link rel="stylesheet" href="/css/style.css?v=5"><link rel="stylesheet" href="/css/admin.css?v=5"></head>
 <body class="adm adm-login"><form method="post" class="card form-card form">
 <h1><span class="brand-mark">동</span> ${esc(S.site.name)} 관리자</h1>
 ${error ? `<div class="alert alert-bad">${esc(error)}</div>` : ''}

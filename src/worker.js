@@ -1,18 +1,19 @@
 // 동공아 (동탄공부잘하는아이) — Cloudflare Worker 진입점
 import {
   html, json, redirect, cookies, setCookie, secretOf, signToken, readToken, randomToken, hashPw, safeEq,
-  limited, ipOf, str, phone, nowIso, getSettings, allSchools, subjects, doneKeys, GRADES,
+  limited, ipOf, str, phone, nowIso, getSettings, allSchools, subjects, doneKeys, GRADES, d1Files,
 } from './lib.js';
 import * as V from './views.js';
 import { handleAdmin } from './admin.js';
 
 const MAX_FILES = 16;
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
-const MAX_BODY_BYTES = 70 * 1024 * 1024;
+const MAX_BODY_BYTES = 45 * 1024 * 1024;
 const USER_TTL = 30 * 86400;
 
 export default {
   async fetch(req, env) {
+    if (!env.FILES) env = { ...env, FILES: d1Files(env.DB) }; // R2 가 없으면 D1 에 저장
     const url = new URL(req.url);
     const path = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, '') : '/';
     try {

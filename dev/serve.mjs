@@ -42,7 +42,8 @@ const ASSETS = {
   },
 };
 
-const env = { DB, FILES, ASSETS, ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'admin1234', SESSION_SECRET: 'local-dev-secret' };
+// DG_NO_R2=1 이면 R2 없이(D1 조각 저장) 동작을 확인한다
+const env = { DB, ...(process.env.DG_NO_R2 ? {} : { FILES }), ASSETS, ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'admin1234', SESSION_SECRET: 'local-dev-secret' };
 
 http.createServer(async (req, res) => {
   const chunks = [];

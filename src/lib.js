@@ -196,3 +196,30 @@ export async function doneKeys(db, S) {
 }
 
 export const GRADES = ['초4', '초5', '초6', '중1', '중2', '중3', '고1', '고2', '고3', 'N수'];
+
+// ── 파일 저장소 대체: R2 바인딩(FILES)이 없으면 D1 file_chunks 테이블에 조각내어 저장 ──
+// D1 은 한 행이 2MB 를 넘을 수 없어 900KB 씩 나눈다. R2 를 켜면 wrangler.jsonc 에 r2_buckets 만 추가하면 된다.
+const CHUNK = 900 * 1024;
+export function d1Files(db) {
+  return {
+    async put(key, body) {
+      const bytes = body instanceof Uint8Array ? body : new Uint8Array(body);
+      await db.prepare('DELETE FROM file_chunks WHERE k = ?').bind(key).run();
+      for (let i = 0, seq = 0; i < bytes.length; i += CHUNK, seq++) {
+        await db.prepare('INSERT INTO file_chunks (k, seq, data) VALUES (?, ?, ?)').bind(key, seq, bytes.slice(i, i + CHUNK)).run();
+      }
+    },
+    async get(key) {
+      const { results } = await db.prepare('SELECT data FROM file_chunks WHERE k = ? ORDER BY seq').bind(key).all();
+      if (!results || !results.length) return null;
+      const parts = results.map((r) => new Uint8Array(r.data));
+      const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+      let o = 0;
+      for (const p of parts) { out.set(p, o); o += p.length; }
+      return { body: out };
+    },
+    async delete(key) {
+      await db.prepare('DELETE FROM file_chunks WHERE k = ?').bind(key).run();
+    },
+  };
+}

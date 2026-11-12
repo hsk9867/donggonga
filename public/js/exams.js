@@ -101,16 +101,16 @@
     renderThumbs();
   };
 
-  // 휴대폰 사진은 한 장에 5~10MB라 올리기 전에 긴 변 2200px JPEG로 줄인다. 실패하면 원본 그대로.
+  // 휴대폰 사진은 한 장에 5~10MB라 올리기 전에 긴 변 2000px JPEG로 줄인다. 실패하면 원본 그대로.
   async function shrink(file) {
     if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size < 700 * 1024) return file;
     try {
       const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
-      const scale = Math.min(1, 2200 / Math.max(bmp.width, bmp.height));
+      const scale = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));
       const c = document.createElement('canvas');
       c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
       c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
-      const blob = await new Promise((res) => c.toBlob(res, 'image/jpeg', 0.85));
+      const blob = await new Promise((res) => c.toBlob(res, 'image/jpeg', 0.82));
       if (!blob || blob.size >= file.size) return file;
       return new File([blob], file.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' });
     } catch { return file; }

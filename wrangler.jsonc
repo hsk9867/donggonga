@@ -12,12 +12,11 @@
     {
       "binding": "DB",
       "database_name": "donggonga-db",
-      // `npx wrangler d1 create donggonga-db` 실행 후 나온 database_id 로 바꿔 주세요
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "database_id": "42d50aaa-3ee4-42b6-8b37-0651126503ef",
       "migrations_dir": "migrations"
     }
-  ],
-  "r2_buckets": [
-    { "binding": "FILES", "bucket_name": "donggonga-files" }
   ]
+  // R2 를 켠 뒤에는 `npx wrangler r2 bucket create donggonga-files` 하고 아래를 추가하면
+  // 새로 올라오는 시험지 파일이 R2 에 저장된다 (지금은 D1 file_chunks 테이블에 저장).
+  // "r2_buckets": [{ "binding": "FILES", "bucket_name": "donggonga-files" }]
 }

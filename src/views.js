@@ -1,7 +1,7 @@
 // 공개 페이지 화면
 import { esc, rich, won, kstDay, allSchools, subjects, GRADES, todayKst } from './lib.js';
 
-const V = '4'; // 정적 파일 캐시 버전
+const V = '5'; // 정적 파일 캐시 버전
 
 const NAV = [
   ['/exams', '시험지 올리기'],
