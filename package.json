@@ -1,0 +1,10 @@
+{
+  "name": "donggonga",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node dev/serve.mjs",
+    "deploy": "wrangler deploy",
+    "migrate": "wrangler d1 migrations apply donggonga-db --remote"
+  }
+}
