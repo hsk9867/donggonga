@@ -122,6 +122,11 @@ ok((await member.req('/my')).text.includes('2쪽이 흐려요'), 'reject reason 
 ok((await upload(guest, { school: '이솔고', subject: '영어', paper: '고1-1 영어 중간' })).json().status === 'accepted', 'rejected slot reopens');
 r = await admin.req(`/admin/uploads/${up3.id}/review`, { method: 'POST', form: { action: 'pending' } });
 ok(decodeURIComponent(r.loc).includes('이미 접수'), 'cannot un-reject when slot was refilled');
+ok((await upload(guest, { school: '동탄중', subject: '수학', paper: '중1-1 중간' })).json().status === 'accepted', 'middle school paper accepted');
+ok((await upload(guest, { school: '동탄중', subject: '수학', paper: '공통수학1 중간' })).status === 400, 'high school paper rejected for middle school');
+ok((await upload(guest, { school: '가온고', subject: '역사', paper: '중1-1 중간' })).status === 400, 'middle school paper rejected for high school');
+r = await guest.req('/exams/missing?level=middle&subject=' + encodeURIComponent('역사'));
+ok(r.status === 200 && r.text.includes('능동중') && !r.text.includes('가온고</th>'), 'missing page middle level');
 ok((await upload(guest, { subject: '기타', paper: '한문' })).json().status === 'accepted' && (await upload(guest, { subject: '기타', paper: '한문' })).json().status === 'accepted', 'multi subject accepts repeats');
 
 // 공지 · 설명회

@@ -1,7 +1,7 @@
 // 동공아 (동탄공부잘하는아이) — Cloudflare Worker 진입점
 import {
   html, json, redirect, cookies, setCookie, secretOf, signToken, readToken, randomToken, hashPw, safeEq,
-  limited, ipOf, str, phone, nowIso, getSettings, allSchools, subjects, doneKeys, GRADES, d1Files,
+  limited, ipOf, str, phone, nowIso, getSettings, allSchools, subjects, doneKeys, GRADES, d1Files, levelOf, papersFor,
 } from './lib.js';
 import * as V from './views.js';
 import { handleAdmin } from './admin.js';
@@ -64,9 +64,11 @@ async function route(ctx) {
     return html(V.examsPage(ctx, { done: await doneKeys(db, S), preset: allSchools(S).includes(school) ? school : '' }));
   }
   if (path === '/exams/missing' && GET) {
+    const level = url.searchParams.get('level') === 'middle' ? 'middle' : 'high';
     const year = S.years.includes(url.searchParams.get('year')) ? url.searchParams.get('year') : S.years[0];
-    const subject = subjects(S).includes(url.searchParams.get('subject')) ? url.searchParams.get('subject') : subjects(S)[0];
-    return html(V.missingPage(ctx, { year, subject, done: await doneKeys(db, S) }));
+    const subs = subjects(S, level);
+    const subject = subs.includes(url.searchParams.get('subject')) ? url.searchParams.get('subject') : subs[0];
+    return html(V.missingPage(ctx, { level, year, subject, done: await doneKeys(db, S) }));
   }
   if (path === '/exams/upload' && !GET) return examUpload(ctx);
   if (path === '/exams/claim' && !GET) return examClaim(ctx, false);
@@ -127,22 +129,28 @@ async function homeData(ctx) {
   const db = env.DB;
   const done = new Set(await doneKeys(db, S));
   const multi = new Set(S.multi || []);
-  const subs = subjects(S).filter((s) => !multi.has(s));
   const schools = allSchools(S);
-  const perSchool = S.years.length * subs.reduce((n, s) => n + S.papers[s].length, 0);
+  // 학교급마다 시험지 수가 달라 학교별로 계산한다 (여러 번 받는 과목은 제외)
+  const subsOf = (school) => Object.keys(papersFor(S, school)).filter((s) => !multi.has(s));
+  const totalOf = (school) => S.years.length * subsOf(school).reduce((n, s) => n + papersFor(S, school)[s].length, 0);
 
   const count = Object.fromEntries(schools.map((s) => [s, 0]));
   for (const k of done) { const s = k.split('|')[0]; if (s in count) count[s]++; }
-  const bySchool = schools.map((school, i) => ({ school, done: count[school], total: perSchool || 1, i }))
+  const bySchool = schools.map((school, i) => ({ school, done: count[school], total: totalOf(school) || 1, i }))
     .sort((a, b) => b.done - a.done || a.i - b.i).slice(0, 6);
 
-  // 모집 중인 시험지 예시: 학교마다 과목을 돌려 가며 아직 비어 있는 첫 칸
+  // 모집 중인 시험지 예시: 고등학교·중학교를 번갈아, 학교마다 과목을 돌려 가며 아직 비어 있는 첫 칸
+  const highs = schools.filter((s) => levelOf(s) === 'high'), middles = schools.filter((s) => levelOf(s) === 'middle');
+  const mixed = [];
+  for (let i = 0; i < Math.max(highs.length, middles.length); i++) { if (highs[i]) mixed.push(highs[i]); if (middles[i]) mixed.push(middles[i]); }
   const need = [];
   const year = S.years[0];
-  for (let i = 0; i < schools.length && need.length < 5 && subs.length; i++) {
-    const subject = subs[i % subs.length];
-    const paper = S.papers[subject].find((p) => !done.has([schools[i], year, subject, p].join('|')));
-    if (paper) need.push({ school: schools[i], subject, paper });
+  for (let i = 0; i < mixed.length && need.length < 5; i++) {
+    const subs = subsOf(mixed[i]);
+    if (!subs.length) continue;
+    const subject = subs[Math.floor(i / 2) % subs.length];
+    const paper = papersFor(S, mixed[i])[subject].find((p) => !done.has([mixed[i], year, subject, p].join('|')));
+    if (paper) need.push({ school: mixed[i], subject, paper });
   }
 
   const collected = (await db.prepare("SELECT COUNT(*) AS n FROM uploads WHERE status = 'approved'").first()).n;
@@ -150,7 +158,7 @@ async function homeData(ctx) {
     .bind(new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10)).all()).results;
   const notices = (await db.prepare('SELECT id, title, pinned, created_at FROM notices ORDER BY pinned DESC, id DESC LIMIT 4').all()).results;
   return {
-    stats: { collected, open: Math.max(0, schools.length * perSchool - done.size), schools: schools.length },
+    stats: { collected, open: Math.max(0, schools.reduce((n, s) => n + totalOf(s), 0) - done.size), schools: schools.length },
     need, bySchool, seminars, notices,
   };
 }
@@ -177,7 +185,7 @@ async function examUpload(ctx) {
   let fd;
   try { fd = await req.formData(); } catch { return json({ status: 'error', message: '업로드를 읽지 못했어요. 다시 시도해 주세요.' }, 400); }
   const school = str(fd.get('school')), year = str(fd.get('year')), subject = str(fd.get('subject')), paper = str(fd.get('paper'));
-  if (!allSchools(S).includes(school) || !S.years.includes(year) || !(S.papers[subject] || []).includes(paper)) {
+  if (!allSchools(S).includes(school) || !S.years.includes(year) || !(papersFor(S, school)[subject] || []).includes(paper)) {
     return json({ status: 'error', message: '학교·연도·과목·시험지를 다시 선택해 주세요.' }, 400);
   }
   if (!user && fd.get('agree_no_reason') !== 'on') return json({ status: 'error', message: '안내 사항에 동의해 주세요.' }, 400);

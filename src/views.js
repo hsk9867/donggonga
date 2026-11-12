@@ -1,7 +1,7 @@
 // 공개 페이지 화면
-import { esc, rich, won, kstDay, allSchools, subjects, GRADES, todayKst } from './lib.js';
+import { esc, rich, won, kstDay, allSchools, subjects, schoolsOf, levelOf, LEVELS, GRADES, todayKst } from './lib.js';
 
-const V = '5'; // 정적 파일 캐시 버전
+const V = '7'; // 정적 파일 캐시 버전
 
 const NAV = [
   ['/exams', '시험지 올리기'],
@@ -149,7 +149,7 @@ export function homePage(ctx, { stats, need, bySchool, seminars, notices }) {
   const h = S.hero;
   const amount = won(S.reward.amount);
   const methods = [S.reward.bank && '계좌 입금', S.reward.coupon && S.reward.couponLabel].filter(Boolean).join(' 또는 ');
-  const chips = allSchools(S).slice(0, 8).map((s) => `<a class="chip" href="/exams?school=${encodeURIComponent(s)}">${esc(s)} ${icon.chev}</a>`).join('');
+  const chips = [...allSchools(S).filter((s) => levelOf(s) === 'high').slice(0, 4), ...allSchools(S).filter((s) => levelOf(s) === 'middle').slice(0, 4)].map((s) => `<a class="chip" href="/exams?school=${encodeURIComponent(s)}">${esc(s)} ${icon.chev}</a>`).join('');
 
   const body = `
 <section class="hero">
@@ -259,7 +259,7 @@ export function examsPage(ctx, { done, preset }) {
   const { S, user } = ctx;
   const amount = won(S.reward.amount);
   const data = {
-    done, papers: S.papers, multi: S.multi || [], reward: S.reward.amount,
+    done, schools: S.schools, papers: S.papers, papersMiddle: S.papersMiddle || {}, multi: S.multi || [], reward: S.reward.amount,
     methods: { bank: !!S.reward.bank, coupon: !!S.reward.coupon, couponLabel: S.reward.couponLabel },
     member: !!user, me: user ? { name: user.student_name, phone: user.parent_phone || user.student_phone } : null,
     preset,
@@ -269,66 +269,69 @@ ${pageHead(`우리 학교 <span class="mark">시험지</span>를 올려 주세�
     `시험지를 올려 주시면 우리 학교 시험을 더 정확하게 분석해 친구와 후배들에게 나눌게요.<br>${esc(S.reward.note)}`,
     `<p class="head-links"><a class="chip" href="/exams/missing">아직 안 올라온 시험지 보기 ${icon.chev}</a></p>`)}
 <section class="sec sec-top">
-  <div class="col narrow" id="exam">
-    <div class="card form-card">
-      <h2 class="card-title">시험지 올리고 <span class="mark">${amount}원</span> 받기</h2>
-      <p class="muted">우리 학교 내신 시험지를 휴대폰으로 찍어 올려 주세요. 관리자가 확인한 뒤 보상을 보내 드립니다.</p>
+  <div class="col wiz-col" id="exam">
+    <div class="card wiz">
+      <h2 class="wiz-title">시험지 올리고 <span class="mark">${amount}원</span> 받기</h2>
+      <ol class="wiz-steps">
+        <li class="on" aria-current="step"><b>01.</b><span>시험지 정보</span></li>
+        <li><b>02.</b><span>사진 올리기</span></li>
+        <li><b>03.</b><span>접수 완료</span></li>
+      </ol>
+      <div class="wiz-body">
+        <section data-step="1" class="wiz-rows">
+          <div class="wrow"><span class="wrow-l" id="lv-l">학교급</span>
+            <div class="wrow-c wrow-radio" role="radiogroup" aria-labelledby="lv-l">
+              <label><input type="radio" name="ex-level" value="high" checked> 고등학교</label>
+              <label><input type="radio" name="ex-level" value="middle"> 중학교</label>
+            </div></div>
+          <label class="wrow"><span class="wrow-l">학교</span><span class="wrow-c"><select id="ex-school"></select></span></label>
+          <label class="wrow"><span class="wrow-l">연도</span><span class="wrow-c wrow-half"><select id="ex-year">${S.years.map((y) => `<option>${esc(y)}</option>`).join('')}</select></span></label>
+          <label class="wrow"><span class="wrow-l">과목</span><span class="wrow-c wrow-half"><select id="ex-subject" disabled></select></span></label>
+          <label class="wrow"><span class="wrow-l">시험지</span><span class="wrow-c"><select id="ex-paper" disabled></select></span></label>
+          <p class="wiz-hint" id="ex-hint" aria-live="polite"></p>
+        </section>
 
-      <div class="step"><span class="step-no">1</span> 학교 선택</div>
-      <div id="ex-school" class="school-grid">
-        ${S.schools.map((g) => `<div class="sg-label">${esc(g.label)}</div>
-        <div class="grid-buttons">${g.list.map((s) => `<button type="button" data-v="${esc(s)}">${esc(s)}</button>`).join('')}</div>`).join('')}
+        <section data-step="2" hidden>
+          <div class="summary" id="ex-summary"></div>
+          <p class="muted small">문제지 전체가 보이도록 밝은 곳에서 한 장씩 찍어 주세요. 여러 장 선택 가능 (최대 16장). PDF 파일도 올릴 수 있어요. 풀이 필기가 있어도 괜찮아요.</p>
+          <label class="file-drop">
+            <input type="file" id="ex-files" accept="image/*,application/pdf" multiple>
+            <span>+ 사진 찍기 / 앨범·PDF에서 추가</span>
+          </label>
+          <p class="muted small">한 장씩만 골라지면 이 버튼을 여러 번 눌러 계속 추가하세요.</p>
+          <div class="ex-count" id="ex-count"></div>
+          <div class="thumbs" id="ex-thumbs"></div>
+          ${user ? '' : `<label class="agree-box"><input type="checkbox" id="ex-agree">
+            <span><b>[필수] 회원가입을 하지 않고 업로드하면 확인 결과와 반려 사유를 볼 수 없어요.</b> 이에 동의합니다.<br>
+            <span class="muted small">결과를 확인하려면 <a href="/login?next=/exams">로그인</a> 또는 <a href="/signup?next=/exams">회원가입</a> 후 올려 주세요.</span></span></label>`}
+          <div class="alert alert-bad" id="ex-alert" role="alert" hidden></div>
+        </section>
+
+        <section data-step="3" hidden id="ex-done"></section>
+
+        <p class="wiz-count"><b id="wiz-now">1</b> / 3</p>
+        <div class="wiz-nav" id="wiz-nav">
+          <button type="button" class="wbtn wbtn-dark" id="wiz-prev" hidden>이전</button>
+          <button type="button" class="wbtn wbtn-brand" id="wiz-next" disabled>다음</button>
+        </div>
       </div>
-
-      <div id="ex-year-wrap" hidden>
-        <div class="step"><span class="step-no">2</span> 연도 선택</div>
-        <div class="seg" id="ex-year">${S.years.map((y) => `<button type="button" data-v="${esc(y)}">${esc(y)}</button>`).join('')}</div>
-      </div>
-
-      <div id="ex-subject-wrap" hidden>
-        <div class="step"><span class="step-no">3</span> 과목 선택</div>
-        <div class="subject-tabs" id="ex-subject">${subjects(S).map((s) => `<button type="button" data-v="${esc(s)}">${esc(s)}</button>`).join('')}</div>
-      </div>
-
-      <div id="ex-paper-wrap" hidden>
-        <div class="step"><span class="step-no">4</span> 시험지 선택</div>
-        <div class="paper-grid" id="ex-paper"></div>
-      </div>
-
-      <form id="ex-form" hidden>
-        <div class="step"><span class="step-no">5</span> 시험지 올리기</div>
-        <p class="muted small">문제지 전체가 보이도록 밝은 곳에서 한 장씩 찍어 주세요. 여러 장 선택 가능 (최대 16장). PDF 파일도 올릴 수 있어요. 풀이 필기가 있어도 괜찮아요.</p>
-        <label class="file-drop">
-          <input type="file" id="ex-files" accept="image/*,application/pdf" multiple>
-          <span>+ 사진 찍기 / 앨범·PDF에서 추가</span>
-        </label>
-        <p class="muted small">한 장씩만 골라지면 이 버튼을 여러 번 눌러 계속 추가하세요.</p>
-        <div class="ex-count" id="ex-count"></div>
-        <div class="thumbs" id="ex-thumbs"></div>
-        <div class="summary" id="ex-summary"></div>
-        ${user ? '' : `<label class="agree-box"><input type="checkbox" id="ex-agree">
-          <span><b>[필수] 회원가입을 하지 않고 업로드하면 확인 결과와 반려 사유를 볼 수 없어요.</b> 이에 동의합니다.<br>
-          <span class="muted small">결과를 확인하려면 <a href="/login?next=/exams">로그인</a> 또는 <a href="/signup?next=/exams">회원가입</a> 후 올려 주세요.</span></span></label>`}
-        <button class="btn btn-brand btn-lg btn-block" id="ex-submit" disabled>업로드하기</button>
-      </form>
     </div>
   </div>
-</section>
-<div class="modal" id="modal" hidden><div class="modal-box"><div id="modal-body"></div></div></div>`;
+</section>`;
   return layout(ctx, {
-    title: '시험지 올리기', body,
+    title: '시험지 올리기', body, bare: true,
     desc: `우리 학교 내신 시험지를 올리고 ${amount}원 보상을 받아 가세요.`,
     scripts: `<script>window.EXAM = ${JSON.stringify(data).replace(/</g, '\\u003c')};</script><script src="/js/exams.js?v=${V}" defer></script>`,
   });
 }
 
-export function missingPage(ctx, { year, subject, done }) {
+export function missingPage(ctx, { level, year, subject, done }) {
   const { S } = ctx;
-  const papers = S.papers[subject] || [];
+  const papers = (level === 'middle' ? S.papersMiddle : S.papers)[subject] || [];
   const doneSet = new Set(done);
-  const q = (y, s) => `/exams/missing?year=${encodeURIComponent(y)}&subject=${encodeURIComponent(s)}`;
+  const q = (y, s, l = level) => `/exams/missing?level=${l}&year=${encodeURIComponent(y)}&subject=${encodeURIComponent(s)}`;
   let total = 0, open = 0;
-  const rows = S.schools.map((g) => `<tr class="sg-row"><th colspan="${papers.length + 1}">${esc(g.label)}</th></tr>` +
+  const rows = schoolsOf(S, level).map((g) => `<tr class="sg-row"><th colspan="${papers.length + 1}">${esc(g.label)}</th></tr>` +
     g.list.map((school) => `<tr><th>${esc(school)}</th>${papers.map((p) => {
       total++;
       if (doneSet.has([school, year, subject, p].join('|'))) return '<td><span class="pill pill-done">완료</span></td>';
@@ -339,9 +342,10 @@ export function missingPage(ctx, { year, subject, done }) {
 ${pageHead('아직 안 올라온 시험지', `<span class="pill pill-need">모집중</span> 표시된 시험지를 올리면 ${won(S.reward.amount)}원을 받을 수 있어요.`)}
 <section class="sec sec-top">
   <div class="col">
+    <div class="seg seg-link">${Object.entries(LEVELS).map(([l, label]) => `<a href="${q(year, '', l)}"${l === level ? ' class="active"' : ''}>${label}</a>`).join('')}</div>
     <div class="seg seg-link">${S.years.map((y) => `<a href="${q(y, subject)}"${y === year ? ' class="active"' : ''}>${esc(y)}</a>`).join('')}</div>
-    <div class="tabs">${subjects(S).map((s) => `<a class="tab${s === subject ? ' active' : ''}" href="${q(year, s)}">${esc(s)}</a>`).join('')}</div>
-    <p class="muted"><b>${esc(year)} · ${esc(subject)}</b> — 모집중 <b class="accent">${open}</b>개 / 전체 ${total}개</p>
+    <div class="tabs">${subjects(S, level).map((s) => `<a class="tab${s === subject ? ' active' : ''}" href="${q(year, s)}">${esc(s)}</a>`).join('')}</div>
+    <p class="muted"><b>${LEVELS[level]} · ${esc(year)} · ${esc(subject)}</b> — 모집중 <b class="accent">${open}</b>개 / 전체 ${total}개</p>
     <div class="table-wrap card">
       <table class="status-table">
         <thead><tr><th>학교</th>${papers.map((p) => `<th>${esc(p)}</th>`).join('')}</tr></thead>

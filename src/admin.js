@@ -1,7 +1,7 @@
 // 관리자 (/admin) — 시험지 검수, 보상 지급, 공지·설명회·상담·회원·설정
 import {
   esc, rich, won, html, json, redirect, cookies, setCookie, secretOf, signToken, readToken, safeEq, hashPw, randomToken,
-  limited, ipOf, str, nowIso, kst, kstDay, putSetting, allSchools,
+  limited, ipOf, str, nowIso, kst, kstDay, putSetting, allSchools, levelOf,
 } from './lib.js';
 import { removeUpload } from './worker.js';
 
@@ -17,7 +17,7 @@ function shell(ctx, title, body) {
 <meta name="robots" content="noindex"><title>${esc(title)} | ${esc(ctx.S.site.name)} 관리자</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="/css/style.css?v=5"><link rel="stylesheet" href="/css/admin.css?v=5"></head>
+<link rel="stylesheet" href="/css/style.css?v=7"><link rel="stylesheet" href="/css/admin.css?v=7"></head>
 <body class="adm">
 <header class="adm-hdr"><a class="adm-brand" href="/admin"><span class="brand-mark">동</span> ${esc(ctx.S.site.name)} 관리자</a>
   <div class="adm-hdr-r"><a href="/" target="_blank" rel="noopener">사이트 보기</a>
@@ -43,7 +43,7 @@ export async function handleAdmin(ctx) {
     const page = (error = '') => html(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex"><title>관리자 로그인</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="/css/style.css?v=5"><link rel="stylesheet" href="/css/admin.css?v=5"></head>
+<link rel="stylesheet" href="/css/style.css?v=7"><link rel="stylesheet" href="/css/admin.css?v=7"></head>
 <body class="adm adm-login"><form method="post" class="card form-card form">
 <h1><span class="brand-mark">동</span> ${esc(S.site.name)} 관리자</h1>
 ${error ? `<div class="alert alert-bad">${esc(error)}</div>` : ''}
@@ -307,8 +307,11 @@ ${rows.map((u) => `<tr><td>${kstDay(u.created_at)}</td><td>${u.type === 'parent'
 
     const schools = groups(b.schools);
     const papers = Object.fromEntries(groups(b.papers).map((g) => [g.label, g.list]));
+    const papersMiddle = Object.fromEntries(groups(b.papersMiddle).map((g) => [g.label, g.list]));
     const years = list(b.years);
-    if (!schools.length || !Object.keys(papers).length || !years.length) return back('/admin/settings', '학교·과목·연도는 한 개 이상 있어야 합니다. 형식을 확인해 주세요.', 'err');
+    const levels = new Set(schools.flatMap((g) => g.list).map(levelOf));
+    if (levels.has('middle') && !Object.keys(papersMiddle).length) return back('/admin/settings', "이름이 '중'으로 끝나는 학교가 있어 중학교 시험지 목록이 필요합니다.", 'err');
+    if (!schools.length || (levels.has('high') && !Object.keys(papers).length) || !years.length) return back('/admin/settings', '학교·과목·연도는 한 개 이상 있어야 합니다. 형식을 확인해 주세요.', 'err');
 
     await putSetting(db, 'site', Object.fromEntries(['name', 'full', 'tagline', 'phone', 'kakao', 'email', 'address', 'hours', 'owner', 'bizno'].map((k) => [k, str(b['site_' + k], 200)])));
     await putSetting(db, 'hero', Object.fromEntries(['line1', 'mark', 'line3', 'sub'].map((k) => [k, str(b['hero_' + k], 300)])));
@@ -319,8 +322,9 @@ ${rows.map((u) => `<tr><td>${kstDay(u.created_at)}</td><td>${u.type === 'parent'
     });
     await putSetting(db, 'schools', schools);
     await putSetting(db, 'papers', papers);
+    await putSetting(db, 'papersMiddle', papersMiddle);
     await putSetting(db, 'years', years);
-    await putSetting(db, 'multi', list(b.multi).filter((s) => s in papers));
+    await putSetting(db, 'multi', list(b.multi).filter((s) => s in papers || s in papersMiddle));
     return back('/admin/settings', '설정을 저장했습니다.');
   }
 
@@ -445,9 +449,10 @@ function settingsForm(S) {
   ${inp('reward_note', '보상 안내 문구', S.reward.note)}
 </section>
 <section class="card adm-form"><h2>시험지 목록</h2>
-  <label class="f"><span class="f-l">학교 (한 줄에 <code>묶음 이름: 학교1, 학교2</code>)</span><textarea name="schools" rows="4">${esc(lines(S.schools))}</textarea></label>
+  <label class="f"><span class="f-l">학교 (한 줄에 <code>묶음 이름: 학교1, 학교2</code>)</span><span class="f-h">이름이 '중'으로 끝나는 학교는 중학교 시험지, 나머지는 고등학교 시험지 목록을 씁니다.</span><textarea name="schools" rows="5">${esc(lines(S.schools))}</textarea></label>
   ${inp('years', '연도 (쉼표로 구분, 앞에 쓴 것이 먼저 보임)', S.years.join(', '))}
-  <label class="f"><span class="f-l">과목별 시험지 (한 줄에 <code>과목: 시험지1, 시험지2</code>)</span><textarea name="papers" rows="9">${esc(lines(Object.entries(S.papers).map(([label, list]) => ({ label, list }))))}</textarea>
+  <label class="f"><span class="f-l">고등학교 과목별 시험지 (한 줄에 <code>과목: 시험지1, 시험지2</code>)</span><textarea name="papers" rows="9">${esc(lines(Object.entries(S.papers).map(([label, list]) => ({ label, list }))))}</textarea></label>
+  <label class="f"><span class="f-l">중학교 과목별 시험지</span><textarea name="papersMiddle" rows="7">${esc(lines(Object.entries(S.papersMiddle || {}).map(([label, list]) => ({ label, list }))))}</textarea>
   <span class="f-h">이미 접수된 시험지의 이름을 바꾸면 그 접수 건은 현황표에서 빠집니다. 새 항목은 뒤에 추가하는 것을 권장합니다.</span></label>
   ${inp('multi', '여러 번 받을 과목 (쉼표로 구분)', (S.multi || []).join(', '), '여기 적은 과목은 같은 칸에 여러 명이 올릴 수 있고, 올린 사람 모두 보상 대상이 됩니다.')}
 </section>

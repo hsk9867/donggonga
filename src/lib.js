@@ -123,6 +123,8 @@ export function phone(v) {
 }
 
 // ── 사이트 설정 (관리자에서 수정, D1 settings 테이블) ─────────────────
+const MIDDLE_TERMS = ['중1-1 중간', '중1-1 기말', '중1-2 중간', '중1-2 기말', '중2-1 중간', '중2-1 기말', '중2-2 중간', '중2-2 기말', '중3-1 중간', '중3-1 기말', '중3-2 중간', '중3-2 기말'];
+
 export const DEFAULTS = {
   site: {
     name: '동공아',
@@ -150,10 +152,22 @@ export const DEFAULTS = {
     note: '시험지별로 가장 먼저 올린 1명에게 드려요.',
   },
   years: ['2026학년도', '2025학년도'],
+  // 학교 이름이 '중'으로 끝나면 중학교 시험지(papersMiddle), 나머지는 고등학교 시험지(papers)를 쓴다
   schools: [
-    { label: '동탄 내 학교', list: ['가온고', '동탄국제고', '동탄중앙고', '병점고', '서연고', '세마고', '신동고', '안법고', '이산고', '이솔고', '정현고', '창의고', '치동고', '한백고', '호연고', '화성고'] },
-    { label: '동탄 외 학교', list: ['김천고', '디미고', '삼괴고', '세교고', '오산고', '외대부고', '운천고', '은혜고', '태광고'] },
+    { label: '중학교 · 동탄1', list: ['능동중', '예당중', '푸른중', '석우중', '솔빛중', '반송중'] },
+    { label: '중학교 · 동탄2', list: ['다원중', '청계중', '이산중', '동탄중', '세정중', '치동중', '청림중', '서연중', '방교중', '한백중', '바른중', '목동중'] },
+    { label: '고등학교 · 동탄1 및 기타', list: ['동탄국제고', '안법고', '가온고', '안화고', '반월고', '병점고', '능동고', '화성고', '세마고', '예당고', '반송고', '나루고'] },
+    { label: '고등학교 · 동탄2', list: ['동탄고', '호연고', '동탄중앙고', '치동고', '이산고', '서연고', '창의고', '한백고', '정현고', '이솔고'] },
   ],
+  papersMiddle: {
+    수학: MIDDLE_TERMS,
+    국어: MIDDLE_TERMS,
+    영어: MIDDLE_TERMS,
+    과학: MIDDLE_TERMS,
+    사회: MIDDLE_TERMS,
+    역사: MIDDLE_TERMS,
+    기타: ['도덕', '한문', '기술가정', '정보'],
+  },
   papers: {
     수학: ['공통수학1 중간', '공통수학1 기말', '공통수학2 중간', '공통수학2 기말', '대수 중간', '대수 기말', '미적분1 중간', '미적분1 기말', '확통 중간', '확통 기말', '기하 중간(고2)', '기하 기말(고2)', '기하 중간(고3)', '기하 기말(고3)', '미적분2 중간', '미적분2 기말', '경제수학'],
     국어: ['고1-1 국어 중간', '고1-1 국어 기말', '고1-2 국어 중간', '고1-2 국어 기말', '고2-1 국어 중간', '고2-1 국어 기말', '고2-2 국어 중간', '고2-2 국어 기말', '고3-1 국어 중간', '고3-1 국어 기말'],
@@ -173,7 +187,7 @@ export async function getSettings(db) {
   for (const row of results || []) {
     try {
       const v = JSON.parse(row.v);
-      if (v && typeof v === 'object' && !Array.isArray(v) && row.k !== 'papers') S[row.k] = { ...S[row.k], ...v };
+      if (v && typeof v === 'object' && !Array.isArray(v) && row.k !== 'papers' && row.k !== 'papersMiddle') S[row.k] = { ...S[row.k], ...v };
       else S[row.k] = v;
     } catch { /* 깨진 값은 기본값 유지 */ }
   }
@@ -185,7 +199,15 @@ export async function putSetting(db, k, v) {
 }
 
 export const allSchools = (S) => S.schools.flatMap((g) => g.list);
-export const subjects = (S) => Object.keys(S.papers);
+// 학교급: 이름이 '중'으로 끝나면 중학교
+export const levelOf = (school) => (/중$/.test(String(school)) ? 'middle' : 'high');
+export const LEVELS = { high: '고등학교', middle: '중학교' };
+export const papersOf = (S, level) => (level === 'middle' ? S.papersMiddle : S.papers) || {};
+export const papersFor = (S, school) => papersOf(S, levelOf(school));
+export const subjects = (S, level = 'high') => Object.keys(papersOf(S, level));
+export const schoolsOf = (S, level) => S.schools
+  .map((g) => ({ label: g.label, list: g.list.filter((s) => levelOf(s) === level) }))
+  .filter((g) => g.list.length);
 export const slotKey = (u) => [u.school, u.year, u.subject, u.paper].join('|');
 
 // 이미 채워진 칸(검수 중 + 승인) 목록. multi 과목은 막지 않는다.
