@@ -479,3 +479,32 @@ body.bare .foot { padding-bottom: 0; }
 .foot-logo img { width: 200px; height: auto; }
 .foot-logo img { width: 240px; }
 .post > .post-body:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+
+/* ── 타이포그래피 효과 (site.js 가 글자를 .w/.ch 로 나눔) ── */
+.typo .w { display: inline-block; white-space: nowrap; }
+.js .typo .ch { display: inline-block; opacity: 0; transform: translateY(.55em) rotate(4deg); filter: blur(3px); }
+.js .typo.typo-in .ch { animation: ch-up .7s cubic-bezier(.2, .75, .25, 1) forwards; animation-delay: calc(var(--i) * 32ms); }
+.js .sec-head h2.typo.typo-in .ch, .js .cta h2.typo.typo-in .ch { animation-delay: calc(var(--i) * 22ms); }
+@keyframes ch-up { to { opacity: 1; transform: none; filter: none; } }
+
+/* 형광펜: 왼쪽에서 오른쪽으로 긋기 */
+.mark { background: linear-gradient(var(--highlight), var(--highlight)) no-repeat 0 88% / 100% 42%; }
+.js .mark { background-size: 0% 42%; transition: background-size .8s cubic-bezier(.65, 0, .35, 1); }
+.js .mark.typo-in { background-size: 100% 42%; }
+.js .typo .mark { transition-delay: calc(var(--n, 10) * 28ms); }
+.js .hero .typo .mark, .js .page-head .typo .mark { transition-delay: var(--hero-done, 600ms); }
+
+/* 큰 제목 아래 설명은 제목이 다 나온 뒤 살짝 떠오르기 */
+.js .hero-sub, .js .hero .search, .js .hero-quick, .js .page-head p { animation: fade-up .8s cubic-bezier(.2, .75, .25, 1) both; animation-delay: var(--hero-done, 600ms); }
+.js .hero .search { animation-delay: calc(var(--hero-done, 600ms) + 120ms); }
+.js .hero-quick { animation-delay: calc(var(--hero-done, 600ms) + 240ms); }
+@keyframes fade-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+.stats b { font-variant-numeric: tabular-nums; display: inline-block; }
+
+/* 움직임 줄이기 / 스크립트 꺼짐 → 처음부터 다 보이게 */
+.typo-off .typo .ch, .typo-off .mark { opacity: 1; transform: none; filter: none; animation: none; background-size: 100% 42%; transition: none; }
+.typo-off .hero-sub, .typo-off .hero .search, .typo-off .hero-quick, .typo-off .page-head p { animation: none; }
+/* 스크립트가 글자를 나누기 전 잠깐 원래 제목이 보였다 사라지는 깜빡임 방지 */
+.js .hero h1:not(.typo), .js .page-head h1:not(.typo) { opacity: 0; }
+.typo-off .hero h1, .typo-off .page-head h1 { opacity: 1 !important; }

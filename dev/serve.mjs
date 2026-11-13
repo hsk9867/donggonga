@@ -53,6 +53,13 @@ http.createServer(async (req, res) => {
   headers.set('CF-Connecting-IP', req.socket.remoteAddress || '127.0.0.1');
   const hasBody = req.method !== 'GET' && req.method !== 'HEAD';
   const request = new Request(`http://${req.headers.host}${req.url}`, { method: req.method, headers, body: hasBody ? Buffer.concat(chunks) : undefined });
+  // 스크린샷 타이밍 조절용: /__sleep?ms=3000 은 그만큼 늦게 응답한다 (페이지 load 이벤트를 붙잡아 둠, 로컬 전용)
+  if (req.url.startsWith('/__sleep')) {
+    const ms = Math.min(15000, Number(new URL(req.url, 'http://x').searchParams.get('ms')) || 0);
+    await new Promise((r) => setTimeout(r, ms));
+    res.writeHead(200, { 'Content-Type': 'image/gif' });
+    return res.end(Buffer.from('R0lGODlhAQABAAAAACw=', 'base64'));
+  }
   // 모바일 화면 확인용: /__m?u=/exams → 390px 폭 프레임 (로컬 전용)
   if (req.url.startsWith('/__m')) {
     let u = new URL(req.url, 'http://x').searchParams.get('u') || '/';

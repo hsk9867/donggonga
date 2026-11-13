@@ -18,7 +18,7 @@ function shell(ctx, title, body) {
 <link rel="icon" href="/img/favicon.png" type="image/png">
 <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="/css/style.css?v=8"><link rel="stylesheet" href="/css/admin.css?v=8"></head>
+<link rel="stylesheet" href="/css/style.css?v=9"><link rel="stylesheet" href="/css/admin.css?v=9"></head>
 <body class="adm">
 <header class="adm-hdr"><a class="adm-brand" href="/admin"><img src="/img/logo-white.png" alt="${esc(ctx.S.site.name)}" width="70" height="24"> 관리자</a>
   <div class="adm-hdr-r"><a href="/" target="_blank" rel="noopener">사이트 보기</a>
@@ -44,7 +44,7 @@ export async function handleAdmin(ctx) {
     const page = (error = '') => html(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex"><title>관리자 로그인</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="/css/style.css?v=8"><link rel="stylesheet" href="/css/admin.css?v=8"></head>
+<link rel="stylesheet" href="/css/style.css?v=9"><link rel="stylesheet" href="/css/admin.css?v=9"></head>
 <body class="adm adm-login"><form method="post" class="card form-card form">
 <h1><img src="/img/logo.png" alt="${esc(S.site.name)}" width="88" height="30"> 관리자</h1>
 ${error ? `<div class="alert alert-bad">${esc(error)}</div>` : ''}

@@ -92,3 +92,95 @@
     sync();
   }
 })();
+
+// ── 타이포그래피 효과 ──────────────────────────────────────────────
+// 1) 제목 글자가 한 자씩 아래에서 떠오른다 (메인 큰 제목은 바로, 나머지 제목은 화면에 들어올 때)
+// 2) 형광펜(.mark)이 왼쪽에서 오른쪽으로 그어진다
+// 3) 숫자(.stats b)가 0 에서 올라간다
+// 움직임 줄이기 설정을 켠 사용자에게는 모두 건너뛴다.
+(() => {
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const root = document.documentElement;
+  if (reduce) { root.classList.add('typo-off'); return; }
+
+  // 글자를 단어(.w, 줄바꿈 단위)와 글자(.ch)로 나눈다. 화면 낭독기는 원래 문장을 읽도록 aria-label 을 붙인다.
+  function split(el) {
+    if (el.dataset.split) return 0;
+    el.dataset.split = '1';
+    el.setAttribute('aria-label', el.textContent.replace(/\s+/g, ' ').trim());
+    let i = 0;
+    const walk = (node) => {
+      [...node.childNodes].forEach((n) => {
+        if (n.nodeType === 1) { if (n.tagName !== 'SVG' && n.tagName !== 'svg') walk(n); return; }
+        if (n.nodeType !== 3 || !n.textContent.trim()) return;
+        const frag = document.createDocumentFragment();
+        n.textContent.split(/(\s+)/).forEach((part) => {
+          if (!part) return;
+          if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(' ')); return; }
+          const w = document.createElement('span');
+          w.className = 'w';
+          w.setAttribute('aria-hidden', 'true');
+          [...part].forEach((c) => {
+            const ch = document.createElement('span');
+            ch.className = 'ch';
+            ch.style.setProperty('--i', i++);
+            ch.textContent = c;
+            w.appendChild(ch);
+          });
+          frag.appendChild(w);
+        });
+        n.replaceWith(frag);
+      });
+    };
+    walk(el);
+    el.style.setProperty('--n', i);
+    return i;
+  }
+
+  const play = (el) => el.classList.add('typo-in');
+  const heads = [...document.querySelectorAll('.hero h1, .page-head h1, .sec-head h2, .wiz-title, .cta h2')];
+  heads.forEach((el) => { el.classList.add('typo'); split(el); });
+
+  // 큰 제목 다음에 오는 설명·형광펜은 제목 글자가 다 올라온 뒤에 이어서
+  const hero = document.querySelector('.hero h1, .page-head h1');
+  if (hero) {
+    const n = Number(hero.style.getPropertyValue('--n')) || 0;
+    root.style.setProperty('--hero-done', `${Math.min(1200, n * 32 + 380)}ms`);
+  }
+
+  // 숫자 올라가기
+  const counters = [...document.querySelectorAll('.stats b')].map((b) => {
+    const target = Number(b.textContent.replace(/[^\d]/g, ''));
+    b.dataset.target = String(target);
+    b.style.minWidth = `${b.textContent.length * 0.62}em`;
+    b.textContent = '0';
+    return b;
+  });
+  const count = (b) => {
+    const target = Number(b.dataset.target) || 0;
+    const t0 = performance.now(), dur = 1100;
+    const tick = (t) => {
+      const p = Math.min(1, (t - t0) / dur);
+      b.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))).toLocaleString('ko-KR');
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  };
+
+  const marks = [...document.querySelectorAll('.mark')];
+  const watched = [...heads.filter((h) => !h.matches('.hero h1, .page-head h1')), ...marks, ...counters];
+  if (hero) setTimeout(() => play(hero), 30);
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        const el = e.target;
+        if (el.dataset.target !== undefined) count(el); else play(el);
+        io.unobserve(el);
+      });
+    }, { rootMargin: '0px 0px -10% 0px' });
+    watched.forEach((el) => io.observe(el));
+  } else {
+    watched.forEach((el) => (el.dataset.target !== undefined ? (el.textContent = Number(el.dataset.target).toLocaleString('ko-KR')) : play(el)));
+  }
+})();
