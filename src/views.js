@@ -1,10 +1,10 @@
 // 공개 페이지 화면
 import { esc, rich, won, kstDay, allSchools, subjects, schoolsOf, levelOf, LEVELS, GRADES, todayKst } from './lib.js';
 
-const V = '14'; // 정적 파일 캐시 버전
+const V = '15'; // 정적 파일 캐시 버전
 
 const NAV = [
-  ['/exams', '시험지 올리기'],
+  ['/exams', '시험지 업로드하기'],
   ['/exams/missing', '시험지 현황'],
   ['/notice', '공지사항'],
 ];
@@ -66,7 +66,7 @@ export function layout(ctx, { title, desc, body, scripts = '', bare = false }) {
 <header class="hdr" data-hdr>
   <div class="hdr-in">
     <a class="brand" href="/" aria-label="${esc(site.name)} 홈">
-      <img class="brand-logo" src="/img/logo.png" alt="${esc(site.name)}" width="94" height="32">
+      <img class="brand-logo" src="/img/logo.png?v=4" alt="${esc(site.name)} Dt센터" width="164" height="32">
     </a>
     <nav class="gnb" aria-label="주 메뉴">${nav}</nav>
     <div class="hdr-r">${account}
@@ -86,7 +86,7 @@ ${body}
 <footer class="foot">
   <div class="foot-in">
     <div class="foot-brand">
-      <a class="foot-logo" href="/"><img src="/img/logo-full.png" alt="${esc(site.name)} · ${esc(site.full)}" width="220" height="100" loading="lazy"></a>
+      <a class="foot-logo" href="/"><img src="/img/logo-full.png?v=4" alt="${esc(site.name)} Dt센터 · ${esc(site.full)}" width="220" height="84" loading="lazy"></a>
       ${tel ? `<p class="foot-label">문의</p>${tel}` : ''}
       ${/^https:\/\//.test(site.kakao) ? `<a class="chip" href="${esc(site.kakao)}" target="_blank" rel="noopener">카카오톡 채널 문의 ${icon.chev}</a>` : ''}
       ${info ? `<dl class="foot-info">${info}</dl>` : ''}
@@ -103,10 +103,10 @@ ${body}
   </div>
 </footer>
 ${bare ? '' : `<div class="fab">
-  <a class="fab-btn fab-dark" href="/exams">📝 <b>시험지 올리기</b><span>${won(S.reward.amount)}원 보상</span></a>
+  <a class="fab-btn fab-dark" href="/exams">📝 <b>시험지 업로드하기</b><span>${won(S.reward.amount)}원 보상</span></a>
 </div>
 <div class="dock">
-  <a class="dock-main" href="/exams">시험지 올리고 보상 받기</a>
+  <a class="dock-main" href="/exams">시험지 업로드하고 보상 받기</a>
 </div>`}
 <script src="/js/site.js?v=${V}" defer></script>
 ${scripts}
@@ -179,7 +179,7 @@ export function homePage(ctx, { stats, need, bySchool, seminars, notices }) {
           <span class="q-body"><span class="board-school">${esc(n.school)}</span><span class="board-paper">${esc(n.subject)} · ${esc(n.paper)}</span></span>
           <span class="omr"><i aria-hidden="true"></i>업로드 가능</span></a></li>`).join('')}
       </ol>
-      <a class="btn btn-brand btn-block btn-lg" href="/exams">시험지 올리고 ${amount}원 받기</a>
+      <a class="btn btn-brand btn-block btn-lg" href="/exams">시험지 업로드하고 ${amount}원 받기</a>
       <a class="board-more" href="/exams/missing">아직 안 올라온 시험지 전체 보기 ${icon.chev}</a>
     </aside>
   </div>
@@ -234,7 +234,7 @@ ${notices.length ? `<section class="sec sec-tint">
   return layout(ctx, { body });
 }
 
-// ── 시험지 올리기 ─────────────────────────────────────────────────────
+// ── 시험지 업로드하기 ─────────────────────────────────────────────────────
 export function examsPage(ctx, { done, preset }) {
   const { S, user } = ctx;
   const amount = won(S.reward.amount);
@@ -245,13 +245,12 @@ export function examsPage(ctx, { done, preset }) {
     preset,
   };
   const body = `
-${pageHead(`우리 학교 <span class="mark">시험지</span>를 올려 주세요`,
-    `시험지를 올려 주시면 우리 학교 시험을 더 정확하게 분석해 친구와 후배들에게 나눌게요.<br>${esc(S.reward.note)}`,
-    `<p class="head-links"><a class="chip" href="/exams/missing">아직 안 올라온 시험지 보기 ${icon.chev}</a></p>`)}
+${pageHead(`동탄 학교별 <span class="mark">내신자료</span>를 함께 만들어갑니다`,
+    `중복 자료 및 제출 기준에 맞지 않는 시험지는 지급 대상에서 제외됩니다.`)}
 <section class="sec sec-top">
   <div class="col wiz-col" id="exam">
     <div class="card wiz">
-      <h2 class="wiz-title">시험지 올리고 <span class="mark">${amount}원</span> 받기</h2>
+      <h2 class="wiz-title">시험지 업로드하고 <span class="mark">${amount}원</span> 받기</h2>
       <ol class="wiz-steps">
         <li class="on" aria-current="step"><b>01.</b><span>시험지 정보</span></li>
         <li><b>02.</b><span>사진 올리기</span></li>
@@ -309,8 +308,8 @@ ${pageHead(`우리 학교 <span class="mark">시험지</span>를 올려 주세�
   </div>
 </section>`;
   return layout(ctx, {
-    title: '시험지 올리기', body, bare: true,
-    desc: `우리 학교 내신 시험지를 올리고 ${amount}원 보상을 받아 가세요.`,
+    title: '시험지 업로드하기', body, bare: true,
+    desc: `동탄 학교별 내신 시험지를 업로드하고 ${amount}원 보상을 받아 가세요.`,
     scripts: `<script>window.EXAM = ${JSON.stringify(data).replace(/</g, '\\u003c')};</script><script src="/js/exams.js?v=${V}" defer></script>`,
   });
 }
@@ -454,7 +453,7 @@ ${pageHead(`${esc(nameOf(user))} 님의 마이페이지`, `${user.type === 'pare
 <section class="sec sec-top"><div class="col narrow">
   ${alertBox(ok, 'ok')}${alertBox(error)}
   <div class="card form-card">
-    <div class="card-head"><h2 class="card-title">내가 올린 시험지</h2><a class="btn btn-sm btn-brand" href="/exams">시험지 올리기</a></div>
+    <div class="card-head"><h2 class="card-title">내가 올린 시험지</h2><a class="btn btn-sm btn-brand" href="/exams">시험지 업로드하기</a></div>
     ${uploads.length ? `<ul class="mylist">${uploads.map((u) => `<li>
       <div class="my-top"><b>${esc(u.school)} · ${esc(u.year)}</b>${statusPill(u)}</div>
       <p>${esc(u.subject)} · ${esc(u.paper)} <span class="muted small">(${u.file_count}장 · ${kstDay(u.created_at)})</span></p>

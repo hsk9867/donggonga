@@ -58,7 +58,7 @@
         a.textContent = s;
         const go = document.createElement('span');
         go.className = 'pill pill-need';
-        go.textContent = '시험지 올리기';
+        go.textContent = '시험지 업로드하기';
         a.appendChild(go);
         li.appendChild(a);
         list.appendChild(li);

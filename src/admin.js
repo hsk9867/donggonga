@@ -20,7 +20,7 @@ function shell(ctx, title, body) {
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="/css/style.css?v=11"><link rel="stylesheet" href="/css/admin.css?v=11"></head>
 <body class="adm">
-<header class="adm-hdr"><a class="adm-brand" href="/admin"><img src="/img/logo-white.png" alt="${esc(ctx.S.site.name)}" width="70" height="24"> 관리자</a>
+<header class="adm-hdr"><a class="adm-brand" href="/admin"><img src="/img/logo-white.png?v=4" alt="${esc(ctx.S.site.name)} Dt센터" width="123" height="24"> 관리자</a>
   <div class="adm-hdr-r"><a href="/" target="_blank" rel="noopener">사이트 보기</a>
   <form method="post" action="/admin/logout" class="inline"><button class="hdr-plain">로그아웃</button></form></div></header>
 <nav class="adm-nav">${nav}</nav>
@@ -46,7 +46,7 @@ export async function handleAdmin(ctx) {
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="/css/style.css?v=11"><link rel="stylesheet" href="/css/admin.css?v=11"></head>
 <body class="adm adm-login"><form method="post" class="card form-card form">
-<h1><img src="/img/logo.png" alt="${esc(S.site.name)}" width="88" height="30"> 관리자</h1>
+<h1><img src="/img/logo.png?v=4" alt="${esc(S.site.name)} Dt센터" width="153" height="30"> 관리자</h1>
 ${error ? `<div class="alert alert-bad">${esc(error)}</div>` : ''}
 <label class="f"><span class="f-l">관리자 비밀번호</span><input type="password" name="password" required autofocus autocomplete="current-password"></label>
 <button class="btn btn-brand btn-block btn-lg">로그인</button></form></body></html>`, error ? 400 : 200);

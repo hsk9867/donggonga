@@ -1,4 +1,4 @@
-// 시험지 올리기 — 3단계 입력 (01 시험지 정보 → 02 사진 올리기 → 03 접수 완료)
+// 시험지 업로드하기 — 3단계 입력 (01 시험지 정보 → 02 사진 올리기 → 03 접수 완료)
 (() => {
   const EXAM = window.EXAM;
   const { methods } = EXAM;
@@ -235,7 +235,7 @@
     $('ex-done').innerHTML = `<div class="m-icon ok">✓</div><h3 class="wiz-done-title">${esc(msg)}</h3>
       <p class="center muted">다른 시험지도 있으면 이어서 올려 주세요.</p>
       <div class="wiz-nav"><a class="wbtn wbtn-dark" href="${EXAM.member ? '/my' : '/'}">${EXAM.member ? '마이페이지' : '홈으로'}</a>
-      <button type="button" class="wbtn wbtn-brand" id="ex-again">다른 시험지 올리기</button></div>`;
+      <button type="button" class="wbtn wbtn-brand" id="ex-again">다른 시험지 업로드하기</button></div>`;
     $('ex-again').onclick = () => {
       picked = []; renderThumbs(); say('');
       el.paper.value = ''; refresh(); go(1);
