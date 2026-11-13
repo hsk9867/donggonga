@@ -63,3 +63,7 @@ body.adm-login { display: grid; place-items: center; min-height: 100dvh; padding
 
 .adm-brand img { height: 22px; width: auto; }
 .adm-login h1 img { height: 30px; width: auto; }
+
+/* 동공아 톤 */
+.adm .card { border-radius: 6px; }
+.adm-nav a:hover, .adm-nav a[aria-current] { color: var(--accent); border-color: var(--accent); }
