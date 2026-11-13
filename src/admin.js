@@ -15,11 +15,12 @@ function shell(ctx, title, body) {
   const nav = MENU.map(([h, l]) => `<a href="${h}"${ctx.path === h || (h !== '/admin' && ctx.path.startsWith(h)) ? ' aria-current="page"' : ''}>${l}</a>`).join('');
   return html(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex"><title>${esc(title)} | ${esc(ctx.S.site.name)} 관리자</title>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/img/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="/css/style.css?v=7"><link rel="stylesheet" href="/css/admin.css?v=7"></head>
+<link rel="stylesheet" href="/css/style.css?v=8"><link rel="stylesheet" href="/css/admin.css?v=8"></head>
 <body class="adm">
-<header class="adm-hdr"><a class="adm-brand" href="/admin"><span class="brand-mark">동</span> ${esc(ctx.S.site.name)} 관리자</a>
+<header class="adm-hdr"><a class="adm-brand" href="/admin"><img src="/img/logo-white.png" alt="${esc(ctx.S.site.name)}" width="70" height="24"> 관리자</a>
   <div class="adm-hdr-r"><a href="/" target="_blank" rel="noopener">사이트 보기</a>
   <form method="post" action="/admin/logout" class="inline"><button class="hdr-plain">로그아웃</button></form></div></header>
 <nav class="adm-nav">${nav}</nav>
@@ -43,9 +44,9 @@ export async function handleAdmin(ctx) {
     const page = (error = '') => html(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex"><title>관리자 로그인</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="/css/style.css?v=7"><link rel="stylesheet" href="/css/admin.css?v=7"></head>
+<link rel="stylesheet" href="/css/style.css?v=8"><link rel="stylesheet" href="/css/admin.css?v=8"></head>
 <body class="adm adm-login"><form method="post" class="card form-card form">
-<h1><span class="brand-mark">동</span> ${esc(S.site.name)} 관리자</h1>
+<h1><img src="/img/logo.png" alt="${esc(S.site.name)}" width="88" height="30"> 관리자</h1>
 ${error ? `<div class="alert alert-bad">${esc(error)}</div>` : ''}
 <label class="f"><span class="f-l">관리자 비밀번호</span><input type="password" name="password" required autofocus autocomplete="current-password"></label>
 <button class="btn btn-brand btn-block btn-lg">로그인</button></form></body></html>`, error ? 400 : 200);

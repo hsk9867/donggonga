@@ -471,3 +471,11 @@ body.bare .foot { padding-bottom: 0; }
   .wiz-count { margin-top: 36px; }
   .wbtn { min-width: 180px; height: 62px; font-size: 1.1875rem; }
 }
+
+/* ── 로고 이미지 ── */
+.brand-logo { height: 28px; width: auto; display: block; }
+@media (min-width: 768px) { .brand-logo { height: 32px; } }
+.foot-logo { display: inline-block; }
+.foot-logo img { width: 200px; height: auto; }
+.foot-logo img { width: 240px; }
+.post > .post-body:first-child { margin-top: 0; padding-top: 0; border-top: 0; }

@@ -17,7 +17,8 @@ export default {
     const url = new URL(req.url);
     const path = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, '') : '/';
     try {
-      if (/^\/(css|js|img)\//.test(path) || path === '/favicon.svg' || path === '/robots.txt') return env.ASSETS.fetch(req);
+      if (/^\/(css|js|img)\//.test(path) || path === '/robots.txt') return env.ASSETS.fetch(req);
+      if (path === '/favicon.ico' || path === '/favicon.svg') return Response.redirect(new URL('/img/favicon.png', req.url).toString(), 301);
 
       // 다른 사이트에서 보낸 POST 차단
       if (req.method === 'POST') {

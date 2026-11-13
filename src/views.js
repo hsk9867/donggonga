@@ -1,7 +1,7 @@
 // 공개 페이지 화면
 import { esc, rich, won, kstDay, allSchools, subjects, schoolsOf, levelOf, LEVELS, GRADES, todayKst } from './lib.js';
 
-const V = '7'; // 정적 파일 캐시 버전
+const V = '8'; // 정적 파일 캐시 버전
 
 const NAV = [
   ['/exams', '시험지 올리기'],
@@ -50,8 +50,13 @@ export function layout(ctx, { title, desc, body, scripts = '', bare = false }) {
 <meta property="og:title" content="${esc(pageTitle)}">
 <meta property="og:description" content="${esc(description)}">
 <meta property="og:locale" content="ko_KR">
+<meta property="og:image" content="${ctx.url.origin}/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#0a1e56">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/img/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
 <script>document.documentElement.className = 'js';</script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="/css/style.css?v=${V}">
@@ -61,8 +66,7 @@ export function layout(ctx, { title, desc, body, scripts = '', bare = false }) {
 <header class="hdr" data-hdr>
   <div class="hdr-in">
     <a class="brand" href="/" aria-label="${esc(site.name)} 홈">
-      <span class="brand-mark" aria-hidden="true">동</span>
-      <span class="brand-txt"><b>${esc(site.name)}</b><small>${esc(site.full)}</small></span>
+      <img class="brand-logo" src="/img/logo.png" alt="${esc(site.name)}" width="94" height="32">
     </a>
     <nav class="gnb" aria-label="주 메뉴">${nav}</nav>
     <div class="hdr-r">${account}
@@ -82,7 +86,7 @@ ${body}
 <footer class="foot">
   <div class="foot-in">
     <div class="foot-brand">
-      <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">동</span><span class="brand-txt"><b>${esc(site.name)}</b><small>${esc(site.full)}</small></span></a>
+      <a class="foot-logo" href="/"><img src="/img/logo-full.png" alt="${esc(site.name)} · ${esc(site.full)}" width="220" height="100" loading="lazy"></a>
       ${tel ? `<p class="foot-label">문의</p>${tel}` : ''}
       ${/^https:\/\//.test(site.kakao) ? `<a class="chip" href="${esc(site.kakao)}" target="_blank" rel="noopener">카카오톡 채널 문의 ${icon.chev}</a>` : ''}
       ${info ? `<dl class="foot-info">${info}</dl>` : ''}

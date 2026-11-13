@@ -28,7 +28,7 @@ const upload = (c, { school = '가온고', year = '2026학년도', subject = '�
 const guest = new Client(), member = new Client(), admin = new Client();
 
 // 공개 페이지
-for (const p of ['/', '/exams', '/exams/missing', '/exams/missing?subject=' + encodeURIComponent('국어'), '/notice', '/seminars', '/consult', '/login', '/signup', '/signup?type=student', '/find', '/privacy', '/terms', '/css/style.css', '/js/exams.js', '/favicon.svg']) {
+for (const p of ['/', '/exams', '/exams/missing', '/exams/missing?subject=' + encodeURIComponent('국어'), '/notice', '/seminars', '/consult', '/login', '/signup', '/signup?type=student', '/find', '/privacy', '/terms', '/css/style.css', '/js/exams.js', '/img/logo.png', '/img/favicon.png', '/img/og.png']) {
   const r = await guest.req(p); ok(r.status === 200, `GET ${p}`, r.status);
 }
 ok((await guest.req('/nope')).status === 404, '404 page');
