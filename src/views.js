@@ -1,7 +1,7 @@
 // 공개 페이지 화면
 import { esc, rich, won, kstDay, allSchools, subjects, schoolsOf, levelOf, LEVELS, GRADES, todayKst } from './lib.js';
 
-const V = '11'; // 정적 파일 캐시 버전
+const V = '12'; // 정적 파일 캐시 버전
 
 const NAV = [
   ['/exams', '시험지 올리기'],
@@ -174,18 +174,19 @@ export function homePage(ctx, { stats, need, bySchool, seminars, notices }) {
         <div class="chips">${chips}</div>
       </div>
     </div>
-    <aside class="card board" aria-label="모집 중인 시험지">
+    <aside class="card board sheet" aria-label="모집 중인 시험지">
+      <div class="sheet-top"><span>${esc(S.years[0] || '')} · 기출 모집</span><span class="sheet-live"><i aria-hidden="true"></i>실시간</span></div>
       <div class="board-head">
-        <span class="badge badge-brand">LIVE</span>
         <h2>지금 모집 중인 시험지</h2>
         <p>아래 시험지를 가장 먼저 올리면 <b>${amount}원</b>을 드려요.</p>
+        <span class="sheet-stamp" aria-hidden="true"><small>보상</small><b>${amount}</b><small>원</small></span>
       </div>
-      <ul class="board-list">
-        ${need.map((n) => `<li><a href="/exams?school=${encodeURIComponent(n.school)}">
-          <span class="board-school">${esc(n.school)}</span>
-          <span class="board-paper">${esc(n.subject)} · ${esc(n.paper)}</span>
-          <span class="pill pill-need">모집중</span></a></li>`).join('')}
-      </ul>
+      <ol class="board-list">
+        ${need.map((n, i) => `<li><a href="/exams?school=${encodeURIComponent(n.school)}">
+          <span class="q-no">${String(i + 1).padStart(2, '0')}</span>
+          <span class="q-body"><span class="board-school">${esc(n.school)}</span><span class="board-paper">${esc(n.subject)} · ${esc(n.paper)}</span></span>
+          <span class="omr"><i aria-hidden="true"></i>모집중</span></a></li>`).join('')}
+      </ol>
       <a class="btn btn-brand btn-block btn-lg" href="/exams">시험지 올리고 ${amount}원 받기</a>
       <a class="board-more" href="/exams/missing">아직 안 올라온 시험지 전체 보기 ${icon.chev}</a>
     </aside>

@@ -643,3 +643,39 @@ input[type=checkbox], input[type=radio] { accent-color: var(--navy); }
 /* 푸터 */
 .foot { background: var(--surface); border-top: 1px solid var(--navy); }
 .stats b { display: block; }
+
+/* ── 모집 중인 시험지: 시험지·OMR 답안지 모양 ── */
+.sheet { position: relative; padding: 0; border: 1px solid var(--line-strong); border-top: 0; border-radius: 4px; overflow: hidden; background: var(--surface); }
+.sheet .board-list { position: relative; background: var(--surface-muted); }
+.sheet .board-list::before { content: ''; position: absolute; left: 22px; top: 0; bottom: 0; width: 1px; background: rgba(204, 40, 39, .22); pointer-events: none; }
+.sheet-top { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px 10px 34px; background: var(--navy); color: #fff; font-size: .8125rem; font-weight: 700; letter-spacing: .08em; }
+.sheet-live { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; letter-spacing: .04em; opacity: .9; }
+.sheet-live i { width: 7px; height: 7px; border-radius: 50%; background: #7fe0a6; box-shadow: 0 0 0 0 rgba(127, 224, 166, .7); animation: live-ping 1.8s infinite; }
+@keyframes live-ping { 70% { box-shadow: 0 0 0 7px rgba(127, 224, 166, 0); } 100% { box-shadow: 0 0 0 0 rgba(127, 224, 166, 0); } }
+.sheet .board-head { position: relative; padding: 22px 104px 18px 34px; border-bottom: 3px double var(--navy); }
+.sheet .board-head h2 { margin-top: 0; }
+.sheet-stamp { position: absolute; right: 18px; top: 50%; width: 78px; height: 78px; margin-top: -39px; display: grid; place-content: center; text-align: center; line-height: 1.05;
+  border: 2.5px solid var(--red); border-radius: 50%; color: var(--red); transform: rotate(-12deg); opacity: .82; background: rgba(255, 255, 255, .6);
+  box-shadow: inset 0 0 0 3px #fff, inset 0 0 0 4.5px rgba(204, 40, 39, .55); }
+.sheet-stamp b { font-size: .95rem; font-weight: 900; letter-spacing: -.03em; }
+.sheet-stamp small { font-size: .625rem; font-weight: 800; letter-spacing: .1em; }
+.sheet .board-list { margin: 0; border-top: 0; border-bottom: 1px solid var(--line); list-style: none; padding: 0; }
+.sheet .board-list a { grid-template-columns: 2.2rem 1fr auto; gap: 12px; padding: 13px 20px 13px 34px; border-bottom: 1px dashed var(--line-strong); }
+.sheet .board-list li:last-child a { border-bottom: 0; }
+.q-no { font-weight: 900; font-size: 1.05rem; color: var(--navy); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.q-no::after { content: '.'; color: var(--accent); }
+.q-body { display: grid; gap: 1px; min-width: 0; }
+.sheet .board-school { font-size: .8125rem; color: var(--muted); font-weight: 700; }
+.sheet .board-paper { font-weight: 700; }
+.omr { display: inline-flex; align-items: center; gap: 6px; font-size: .75rem; font-weight: 700; color: var(--accent); }
+.omr i { width: 18px; height: 24px; border: 1.5px solid var(--accent); border-radius: 50%; transition: background-color .2s, box-shadow .2s; }
+.sheet .board-list a:hover { background: var(--brand-50); }
+.sheet .board-list a:hover .omr i { background: var(--navy); border-color: var(--navy); box-shadow: inset 0 0 0 2px #fff; }
+.sheet > .btn { margin: 18px 20px 0 34px; width: auto; display: flex; }
+.sheet .board-more { margin: 12px 0 18px; }
+@media (min-width: 900px) { .sheet { padding: 0; } }
+@media (prefers-reduced-motion: reduce) { .sheet-live i { animation: none; } }
+
+/* ── 눈 내리는 효과 (site.js 가 canvas 를 붙임) ── */
+.snow { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 60; }
+@media print { .snow { display: none; } }

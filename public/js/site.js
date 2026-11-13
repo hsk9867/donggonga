@@ -184,3 +184,50 @@
     watched.forEach((el) => (el.dataset.target !== undefined ? (el.textContent = Number(el.dataset.target).toLocaleString('ko-KR')) : play(el)));
   }
 })();
+
+// ── 눈 내리는 효과: 화면 위에 가볍게, 클릭은 그대로 통과. 움직임 줄이기 설정·관리자 화면에서는 끔 ──
+(() => {
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || location.pathname.startsWith('/admin')) return;
+  const cv = document.createElement('canvas');
+  cv.className = 'snow'; cv.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(cv);
+  const cx = cv.getContext('2d');
+  if (!cx) return;
+  let W = 0, H = 0, dpr = 1, flakes = [], raf = 0, last = 0;
+  const make = (top) => ({
+    x: Math.random() * W, y: top ? Math.random() * H : -10,
+    r: 1 + Math.random() * 2.6, s: 18 + Math.random() * 34,      // 크기, 떨어지는 속도(px/초)
+    w: Math.random() * Math.PI * 2, ws: .4 + Math.random() * .9,  // 좌우 흔들림
+    a: .45 + Math.random() * .45,
+  });
+  const size = () => {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const n = Math.round(Math.min(70, Math.max(26, W * H / 22000)));
+    while (flakes.length < n) flakes.push(make(true));
+    flakes.length = n;
+  };
+  const tick = (t) => {
+    const dt = Math.min(.05, (t - (last || t)) / 1000); last = t;
+    cx.clearRect(0, 0, W, H);
+    for (const f of flakes) {
+      f.w += f.ws * dt; f.y += f.s * dt; f.x += Math.sin(f.w) * 14 * dt;
+      if (f.y > H + 10) Object.assign(f, make(false));
+      if (f.x < -10) f.x = W + 10; else if (f.x > W + 10) f.x = -10;
+      cx.beginPath(); cx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+      // 밝은 바탕에서도 보이도록 옅은 하늘색 눈 + 흰 테두리
+      cx.fillStyle = `rgba(170, 196, 245, ${f.a})`; cx.fill();
+      cx.lineWidth = .6; cx.strokeStyle = `rgba(255, 255, 255, ${f.a})`; cx.stroke();
+    }
+    raf = requestAnimationFrame(tick);
+  };
+  size();
+  addEventListener('resize', size);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { cancelAnimationFrame(raf); raf = 0; }
+    else if (!raf) { last = 0; raf = requestAnimationFrame(tick); }
+  });
+  raf = requestAnimationFrame(tick);
+})();
