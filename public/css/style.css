@@ -679,3 +679,29 @@ input[type=checkbox], input[type=radio] { accent-color: var(--navy); }
 /* ── 눈 내리는 효과 (site.js 가 canvas 를 붙임) ── */
 .snow { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 60; }
 @media print { .snow { display: none; } }
+
+/* ── 시험지 올리기 02단계: 자료 등록 안내 ── */
+.up-head { text-align: center; margin: 4px 0 18px; }
+.up-pill { display: inline-block; padding: 6px 14px; border-radius: 999px; background: var(--brand-100); color: var(--brand-strong); font-size: .8125rem; font-weight: 800; }
+.up-title { margin-top: 12px; font-size: clamp(1.4rem, 6vw, 1.75rem); font-weight: 800; letter-spacing: -.035em; color: var(--ink); }
+.up-em { position: relative; color: var(--brand-strong); white-space: nowrap; }
+.up-em::after { content: ''; position: absolute; left: -2px; right: -2px; bottom: -4px; height: 5px; border-radius: 5px; background: var(--brand); transform: rotate(-1.2deg); opacity: .85; }
+.up-desc { margin-top: 12px; color: var(--muted); font-size: .9375rem; line-height: 1.6; }
+.wiz .up-head + .summary { text-align: center; margin-bottom: 4px; }
+.up-drop { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 22px 16px; text-align: left; border-radius: 10px; }
+.up-drop svg { flex: none; width: 44px; height: 44px; color: var(--navy); }
+.up-drop-t { display: grid; gap: 2px; }
+.up-drop-t b { font-size: 1.2rem; font-weight: 800; color: var(--navy); letter-spacing: -.02em; }
+.up-drop-t small { font-size: .8125rem; font-weight: 500; color: var(--muted); }
+.up-feats { display: grid; grid-template-columns: repeat(3, 1fr); margin: 18px 0; padding: 0; list-style: none; }
+.up-feats li { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 4px 6px; font-size: .8125rem; font-weight: 600; line-height: 1.35; color: var(--ink-soft); }
+.up-feats li + li { border-left: 1px solid var(--line-strong); }
+.up-feats svg { flex: none; width: 28px; height: 28px; color: var(--navy); }
+@media (max-width: 420px) { .up-feats li { flex-direction: column; text-align: center; gap: 4px; font-size: .75rem; } }
+.wiz .agree-box { background: var(--fill); }
+@media (max-width: 480px) {
+  .up-desc br { display: none; }
+  .up-drop { gap: 12px; padding: 18px 12px; }
+  .up-drop svg { width: 36px; height: 36px; }
+  .up-drop-t b { font-size: 1.05rem; white-space: nowrap; }
+}

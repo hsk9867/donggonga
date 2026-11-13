@@ -89,7 +89,7 @@
       next.disabled = !(s.school && s.year && s.subject && s.paper);
     } else if (step === 2) {
       const agree = $('ex-agree');
-      next.textContent = busy ? '올리는 중…' : '업로드하기';
+      next.textContent = busy ? '등록하는 중…' : '등록 진행';
       next.disabled = busy || !picked.length || (agree && !agree.checked);
     }
   }

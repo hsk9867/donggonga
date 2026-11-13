@@ -1,7 +1,7 @@
 // 공개 페이지 화면
 import { esc, rich, won, kstDay, allSchools, subjects, schoolsOf, levelOf, LEVELS, GRADES, todayKst } from './lib.js';
 
-const V = '12'; // 정적 파일 캐시 버전
+const V = '13'; // 정적 파일 캐시 버전
 
 const NAV = [
   ['/exams', '시험지 올리기'],
@@ -153,7 +153,6 @@ export function homePage(ctx, { stats, need, bySchool, seminars, notices }) {
   const h = S.hero;
   const amount = won(S.reward.amount);
   const methods = [S.reward.bank && '계좌 입금', S.reward.coupon && S.reward.couponLabel].filter(Boolean).join(' 또는 ');
-  const chips = [...allSchools(S).filter((s) => levelOf(s) === 'high').slice(0, 4), ...allSchools(S).filter((s) => levelOf(s) === 'middle').slice(0, 4)].map((s) => `<a class="chip" href="/exams?school=${encodeURIComponent(s)}">${esc(s)} ${icon.chev}</a>`).join('');
 
   const body = `
 <section class="hero">
@@ -169,10 +168,6 @@ export function homePage(ctx, { stats, need, bySchool, seminars, notices }) {
         <ul class="search-list" data-list hidden></ul>
       </form>
       <script type="application/json" id="school-data">${JSON.stringify(allSchools(S)).replace(/</g, '\\u003c')}</script>
-      <div class="hero-quick">
-        <p>또는 학교 바로가기</p>
-        <div class="chips">${chips}</div>
-      </div>
     </div>
     <aside class="card board sheet" aria-label="모집 중인 시험지">
       <div class="sheet-top"><span>${esc(S.years[0] || '')} · 기출 모집</span><span class="sheet-live"><i aria-hidden="true"></i>실시간</span></div>
@@ -297,18 +292,28 @@ ${pageHead(`우리 학교 <span class="mark">시험지</span>를 올려 주세�
         </section>
 
         <section data-step="2" hidden>
+          <div class="up-head">
+            <span class="up-pill">동탄 중·고등 내신 자료실</span>
+            <h3 class="up-title">학교 시험자료 <span class="up-em">업로드하기</span></h3>
+            <p class="up-desc">동탄 지역 중·고등학교의 실제 시험지, 빈출문제, 정답지 등<br>학교 시험 자료를 등록하는 공간입니다.</p>
+          </div>
           <div class="summary" id="ex-summary"></div>
-          <p class="muted small">문제지 전체가 보이도록 밝은 곳에서 한 장씩 찍어 주세요. 여러 장 선택 가능 (최대 16장). PDF 파일도 올릴 수 있어요. 풀이 필기가 있어도 괜찮아요.</p>
-          <label class="file-drop">
+          <label class="file-drop up-drop">
             <input type="file" id="ex-files" accept="image/*,application/pdf" multiple>
-            <span>+ 사진 찍기 / 앨범·PDF에서 추가</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 8.5a4.25 4.25 0 0 1-.25 8.5M12 12v8m0-8-3 3m3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="up-drop-t"><b>시험자료 등록하기</b><small>사진 또는 PDF 파일을 선택해 주세요.</small></span>
           </label>
-          <p class="muted small">한 장씩만 골라지면 이 버튼을 여러 번 눌러 계속 추가하세요.</p>
+          <p class="muted small center">여러 장의 시험지도 한 번에 등록할 수 있습니다.</p>
           <div class="ex-count" id="ex-count"></div>
           <div class="thumbs" id="ex-thumbs"></div>
-          ${user ? '' : `<label class="agree-box"><input type="checkbox" id="ex-agree">
-            <span><b>[필수] 회원가입을 하지 않고 업로드하면 확인 결과와 반려 사유를 볼 수 없어요.</b> 이에 동의합니다.<br>
-            <span class="muted small">결과를 확인하려면 <a href="/login?next=/exams">로그인</a> 또는 <a href="/signup?next=/exams">회원가입</a> 후 올려 주세요.</span></span></label>`}
+          <ul class="up-feats">
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11h16v9H4zM3 7h18v4H3zM12 7v13M12 7c-1.5-3-5-3.5-5-1.2C7 7 9.5 7 12 7Zm0 0c1.5-3 5-3.5 5-1.2C17 7 14.5 7 12 7Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span>승인 시<br>등록 보상 제공</span></li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span>학교별<br>시험 자료실에 공유</span></li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.3 7.5 9.5 4.3-1.2 7.5-4.9 7.5-9.5V6L12 3Zm-3.2 9.2 2.2 2.2 4.4-4.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>신뢰도 높은<br>학습 자료 구축</span></li>
+          </ul>
+          <label class="agree-box"><input type="checkbox" id="ex-agree">
+            <span><b>자료 등록 및 이용 안내에 동의합니다.</b><br>
+            <span class="muted small">등록한 자료의 검토 및 승인 절차에 동의하며, 운영 기준에 맞지 않는 자료는 등록이 제한될 수 있습니다.${user ? '' : ` 비회원으로 등록하면 확인 결과를 볼 수 없어요. <a href="/login?next=/exams">로그인</a> · <a href="/signup?next=/exams">회원가입</a>`}</span></span></label>
           <div class="alert alert-bad" id="ex-alert" role="alert" hidden></div>
         </section>
 
@@ -316,7 +321,7 @@ ${pageHead(`우리 학교 <span class="mark">시험지</span>를 올려 주세�
 
         <p class="wiz-count"><b id="wiz-now">1</b> / 3</p>
         <div class="wiz-nav" id="wiz-nav">
-          <button type="button" class="wbtn wbtn-dark" id="wiz-prev" hidden>이전</button>
+          <button type="button" class="wbtn wbtn-dark" id="wiz-prev" hidden>앞 단계</button>
           <button type="button" class="wbtn wbtn-brand" id="wiz-next" disabled>다음</button>
         </div>
       </div>
