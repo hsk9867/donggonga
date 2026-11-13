@@ -645,7 +645,7 @@ input[type=checkbox], input[type=radio] { accent-color: var(--navy); }
 .stats b { display: block; }
 
 /* ── 모집 중인 시험지: 시험지·OMR 답안지 모양 ── */
-.sheet { position: relative; padding: 0; border: 1px solid var(--line-strong); border-top: 0; border-radius: 4px; overflow: hidden; background: var(--surface); }
+.sheet { position: relative; padding: 0; border: 1px solid var(--line-strong); border-top: 4px solid var(--navy); border-radius: 4px; overflow: hidden; background: var(--surface); }
 .sheet .board-list { position: relative; background: var(--surface-muted); }
 .sheet .board-list::before { content: ''; position: absolute; left: 22px; top: 0; bottom: 0; width: 1px; background: rgba(204, 40, 39, .22); pointer-events: none; }
 .sheet-top { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px 10px 34px; background: var(--navy); color: #fff; font-size: .8125rem; font-weight: 700; letter-spacing: .08em; }

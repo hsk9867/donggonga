@@ -40,7 +40,7 @@
     const list = s.school && s.subject ? papersOf(s.school)[s.subject] || [] : [];
     el.paper.innerHTML = opt('', '시험지 선택') + list.map((p) => {
       const d = isDone({ ...s, paper: p });
-      return opt(p, d ? `${p} · 업로드 완료` : `${p} · 모집중`, d ? ' disabled' : '');
+      return opt(p, d ? `${p} · 업로드 완료` : `${p} · 업로드 가능`, d ? ' disabled' : '');
     }).join('');
     el.paper.disabled = !list.length || !s.year;
     if (list.includes(prev) && !isDone({ ...s, paper: prev })) el.paper.value = prev;

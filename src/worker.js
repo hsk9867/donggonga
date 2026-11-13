@@ -281,11 +281,11 @@ async function signup(ctx) {
   const type = b.type === 'student' ? 'student' : 'parent';
   const next = safeNext(b.next);
   const v = {
-    username: str(b.username, 20), student_name: str(b.student_name, 20),
+    username: str(b.username, 20), cafe_nick: str(b.cafe_nick, 30),
     school: str(b.school_custom, 30) || str(b.school, 30), grade: str(b.grade, 10),
-    parent_phone: phone(b.parent_phone), student_phone: phone(b.student_phone), agree_sms: b.agree_sms === 'on',
+    phone: phone(b.phone), agree_sms: b.agree_sms === 'on',
   };
-  const fail = (error) => html(V.signupPage(ctx, { type, next, error, v: { ...v, parent_phone: str(b.parent_phone, 20), student_phone: str(b.student_phone, 20) } }), 400);
+  const fail = (error) => html(V.signupPage(ctx, { type, next, error, v: { ...v, phone: str(b.phone, 20) } }), 400);
 
   if (await limited(db, 'join:' + ipOf(req), 10, 3600)) return fail('잠시 후 다시 시도해 주세요.');
   if (!/^[A-Za-z0-9]{4,20}$/.test(v.username)) return fail('아이디는 영문·숫자 4~20자로 입력해 주세요.');
@@ -294,16 +294,16 @@ async function signup(ctx) {
   if (pw !== b.password2) return fail('비밀번호 확인이 일치하지 않습니다.');
   if (!v.school) return fail('학교를 선택하거나 직접 입력해 주세요.');
   if (!GRADES.includes(v.grade)) return fail('학년을 선택해 주세요.');
-  if (!v.student_name) return fail('학생 이름을 입력해 주세요.');
-  if (type === 'parent' && !v.parent_phone) return fail('학부모 휴대폰 번호를 정확히 입력해 주세요.');
-  if (type === 'student' && !v.student_phone) return fail('학생 휴대폰 번호를 정확히 입력해 주세요.');
+  if (!v.cafe_nick) return fail('동공아 카페 아이디 또는 닉네임을 입력해 주세요.');
+  if (b.phone && String(b.phone).trim() && !v.phone) return fail('휴대폰 번호를 정확히 입력해 주세요. 입력하지 않아도 가입할 수 있어요.');
   if (b.agree_privacy !== 'on') return fail('개인정보 수집·이용에 동의해 주세요.');
   if (await db.prepare('SELECT 1 FROM users WHERE username = ? COLLATE NOCASE').bind(v.username).first()) return fail('이미 사용 중인 아이디입니다.');
 
   const { salt, hash } = await hashPw(pw);
-  const r = await db.prepare(`INSERT INTO users (type, username, pw_hash, pw_salt, student_name, school, grade, student_phone, parent_phone, agree_sms, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(type, v.username, hash, salt, v.student_name, v.school, v.grade, v.student_phone, v.parent_phone, v.agree_sms ? 1 : 0, nowIso()).run();
+  // 휴대폰 번호는 하나만 받는다: 학부모 회원은 학부모 번호 칸, 학생 회원은 학생 번호 칸에 저장
+  const r = await db.prepare(`INSERT INTO users (type, username, pw_hash, pw_salt, student_name, cafe_nick, school, grade, student_phone, parent_phone, agree_sms, created_at)
+    VALUES (?, ?, ?, ?, '', ?, ?, ?, ?, ?, ?, ?)`)
+    .bind(type, v.username, hash, salt, v.cafe_nick, v.school, v.grade, type === 'student' ? v.phone : '', type === 'parent' ? v.phone : '', v.agree_sms ? 1 : 0, nowIso()).run();
   return redirect(next || '/my?ok=joined', { 'Set-Cookie': await userCookie(ctx, r.meta.last_row_id) });
 }
 
@@ -329,9 +329,10 @@ async function findId(ctx) {
   const { req, env } = ctx;
   const b = await form(req);
   if (await limited(env.DB, 'find:' + ipOf(req), 6, 600)) return html(V.findPage(ctx, { error: '잠시 후 다시 시도해 주세요.' }), 429);
-  const ph = phone(b.phone), name = str(b.student_name, 20);
-  if (!ph || !name) return html(V.findPage(ctx, { error: '이름과 휴대폰 번호를 정확히 입력해 주세요.' }), 400);
-  const { results } = await env.DB.prepare('SELECT username FROM users WHERE student_name = ? AND (parent_phone = ? OR student_phone = ?)').bind(name, ph, ph).all();
+  const ph = phone(b.phone), name = str(b.cafe_nick, 30);
+  if (!ph || !name) return html(V.findPage(ctx, { error: '카페 아이디·닉네임과 휴대폰 번호를 정확히 입력해 주세요.' }), 400);
+  // 예전 회원은 학생 이름으로 가입했으므로 그 이름으로도 찾는다
+  const { results } = await env.DB.prepare('SELECT username FROM users WHERE (cafe_nick = ? OR student_name = ?) AND (parent_phone = ? OR student_phone = ?)').bind(name, name, ph, ph).all();
   const mask = (s) => s.slice(0, 2) + '*'.repeat(Math.max(1, s.length - 4)) + s.slice(-2);
   return html(V.findPage(ctx, { found: (results || []).map((r) => mask(r.username)) }));
 }
@@ -351,13 +352,13 @@ async function my(ctx) {
 
   if (path === '/my' && !GET) {
     const b = await form(req);
-    const name = str(b.student_name, 20);
-    const pp = phone(b.parent_phone), sp = phone(b.student_phone);
-    if (!name) return html(await render({ error: '학생 이름을 입력해 주세요.' }), 400);
-    if ((b.parent_phone && !pp) || (b.student_phone && !sp)) return html(await render({ error: '휴대폰 번호를 정확히 입력해 주세요.' }), 400);
-    if (!pp && !sp) return html(await render({ error: '휴대폰 번호를 하나 이상 입력해 주세요.' }), 400);
-    await db.prepare('UPDATE users SET school = ?, grade = ?, student_name = ?, parent_phone = ?, student_phone = ?, agree_sms = ? WHERE id = ?')
-      .bind(str(b.school_custom, 30) || str(b.school, 30) || user.school, GRADES.includes(b.grade) ? b.grade : user.grade, name, pp, sp, b.agree_sms === 'on' ? 1 : 0, user.id).run();
+    const nick = str(b.cafe_nick, 30);
+    const ph = phone(b.phone);
+    if (!nick) return html(await render({ error: '동공아 카페 아이디 또는 닉네임을 입력해 주세요.' }), 400);
+    if (b.phone && String(b.phone).trim() && !ph) return html(await render({ error: '휴대폰 번호를 정확히 입력해 주세요.' }), 400);
+    const isP = user.type !== 'student';
+    await db.prepare('UPDATE users SET school = ?, grade = ?, cafe_nick = ?, parent_phone = ?, student_phone = ?, agree_sms = ? WHERE id = ?')
+      .bind(str(b.school_custom, 30) || str(b.school, 30) || user.school, GRADES.includes(b.grade) ? b.grade : user.grade, nick, isP ? ph : '', isP ? '' : ph, b.agree_sms === 'on' ? 1 : 0, user.id).run();
     return redirect('/my?ok=saved');
   }
 

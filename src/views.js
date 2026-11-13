@@ -1,14 +1,12 @@
 // 공개 페이지 화면
 import { esc, rich, won, kstDay, allSchools, subjects, schoolsOf, levelOf, LEVELS, GRADES, todayKst } from './lib.js';
 
-const V = '13'; // 정적 파일 캐시 버전
+const V = '14'; // 정적 파일 캐시 버전
 
 const NAV = [
   ['/exams', '시험지 올리기'],
   ['/exams/missing', '시험지 현황'],
-  ['/seminars', '설명회'],
   ['/notice', '공지사항'],
-  ['/consult', '상담·문자 신청'],
 ];
 
 const icon = {
@@ -18,6 +16,8 @@ const icon = {
   user: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
 };
 
+export const nameOf = (u) => (u && (u.cafe_nick || u.student_name || u.username)) || '';
+
 export function layout(ctx, { title, desc, body, scripts = '', bare = false }) {
   const { S, user, path } = ctx;
   const site = S.site;
@@ -26,7 +26,7 @@ export function layout(ctx, { title, desc, body, scripts = '', bare = false }) {
   const nav = NAV.map(([href, label]) =>
     `<a href="${href}"${path === href || (href !== '/exams' && path.startsWith(href + '/')) ? ' aria-current="page"' : ''}>${label}</a>`).join('');
   const account = user
-    ? `<a class="hdr-link" href="/my">${icon.user}<span>${esc(user.student_name)} 님</span></a>
+    ? `<a class="hdr-link" href="/my">${icon.user}<span>${esc(nameOf(user))} 님</span></a>
        <form method="post" action="/logout" class="inline"><button class="hdr-link hdr-plain">로그아웃</button></form>`
     : `<a class="hdr-link" href="/login">${icon.user}<span>로그인</span></a><a class="btn btn-sm btn-brand hdr-join" href="/signup">회원가입</a>`;
   const tel = site.phone ? `<a class="foot-tel" href="tel:${esc(site.phone.replace(/[^\d+]/g, ''))}">${esc(site.phone)}</a>` : '';
@@ -104,10 +104,8 @@ ${body}
 </footer>
 ${bare ? '' : `<div class="fab">
   <a class="fab-btn fab-dark" href="/exams">📝 <b>시험지 올리기</b><span>${won(S.reward.amount)}원 보상</span></a>
-  <a class="fab-btn fab-brand" href="/consult">💬 <b>문자수신 신청</b></a>
 </div>
 <div class="dock">
-  <a class="dock-sub" href="/consult">문자수신 신청</a>
   <a class="dock-main" href="/exams">시험지 올리고 보상 받기</a>
 </div>`}
 <script src="/js/site.js?v=${V}" defer></script>
@@ -170,17 +168,16 @@ export function homePage(ctx, { stats, need, bySchool, seminars, notices }) {
       <script type="application/json" id="school-data">${JSON.stringify(allSchools(S)).replace(/</g, '\\u003c')}</script>
     </div>
     <aside class="card board sheet" aria-label="모집 중인 시험지">
-      <div class="sheet-top"><span>${esc(S.years[0] || '')} · 기출 모집</span><span class="sheet-live"><i aria-hidden="true"></i>실시간</span></div>
       <div class="board-head">
-        <h2>지금 모집 중인 시험지</h2>
-        <p>아래 시험지를 가장 먼저 올리면 <b>${amount}원</b>을 드려요.</p>
+        <h2>지금 업로드 중인 시험지</h2>
+        <p>최초등록자에 한해 지급해드립니다.</p>
         <span class="sheet-stamp" aria-hidden="true"><small>보상</small><b>${amount}</b><small>원</small></span>
       </div>
       <ol class="board-list">
         ${need.map((n, i) => `<li><a href="/exams?school=${encodeURIComponent(n.school)}">
           <span class="q-no">${String(i + 1).padStart(2, '0')}</span>
           <span class="q-body"><span class="board-school">${esc(n.school)}</span><span class="board-paper">${esc(n.subject)} · ${esc(n.paper)}</span></span>
-          <span class="omr"><i aria-hidden="true"></i>모집중</span></a></li>`).join('')}
+          <span class="omr"><i aria-hidden="true"></i>업로드 가능</span></a></li>`).join('')}
       </ol>
       <a class="btn btn-brand btn-block btn-lg" href="/exams">시험지 올리고 ${amount}원 받기</a>
       <a class="board-more" href="/exams/missing">아직 안 올라온 시험지 전체 보기 ${icon.chev}</a>
@@ -193,7 +190,7 @@ export function homePage(ctx, { stats, need, bySchool, seminars, notices }) {
     <h2 class="stats-title">동탄 학부모님들이 함께 채워 가는 기출 자료실</h2>
     <ul class="stats">
       <li><b>${won(stats.collected)}</b><span>모인 시험지</span></li>
-      <li><b>${won(stats.open)}</b><span>모집 중인 시험지</span></li>
+      <li><b>${won(stats.open)}</b><span>업로드 가능한 시험지</span></li>
       <li><b>${won(stats.schools)}</b><span>참여 학교</span></li>
     </ul>
   </div>
@@ -213,19 +210,12 @@ export function homePage(ctx, { stats, need, bySchool, seminars, notices }) {
   </div>
 </section>
 
-${seminars.length ? `<section class="sec sec-amber">
-  <div class="col">
-    <div class="sec-head" data-reveal><h2>다가오는 설명회</h2><a href="/seminars">전체 보기 ${icon.chev}</a></div>
-    <div class="grid3">${seminars.map(seminarCard).join('')}</div>
-  </div>
-</section>` : ''}
-
 <section class="sec">
   <div class="col">
     <div class="sec-head" data-reveal><h2>학교별 수집 현황</h2><a href="/exams/missing">전체 보기 ${icon.chev}</a></div>
     <div class="grid3">
       ${bySchool.map((b) => `<a class="card school-card" href="/exams?school=${encodeURIComponent(b.school)}" data-reveal>
-        <div class="school-top"><h3>${esc(b.school)}</h3><span class="pill ${b.done ? 'pill-done' : 'pill-need'}">${b.done ? `${b.done}건 수집` : '첫 시험지 모집중'}</span></div>
+        <div class="school-top"><h3>${esc(b.school)}</h3><span class="pill ${b.done ? 'pill-done' : 'pill-need'}">${b.done ? `${b.done}건 수집` : '첫 시험지 업로드 가능'}</span></div>
         <div class="bar"><i style="width:${Math.max(2, Math.round((b.done / b.total) * 100))}%"></i></div>
         <p>${b.done} / ${b.total} · 남은 시험지 ${b.total - b.done}개</p>
       </a>`).join('')}
@@ -240,17 +230,7 @@ ${notices.length ? `<section class="sec sec-tint">
       ${notices.map((n) => `<li><a href="/notice/${n.id}">${n.pinned ? '<span class="badge badge-brand">공지</span>' : ''}<span class="nlist-t">${esc(n.title)}</span><time>${kstDay(n.created_at)}</time></a></li>`).join('')}
     </ul>
   </div>
-</section>` : ''}
-
-<section class="sec">
-  <div class="col">
-    <div class="cta" data-reveal>
-      <div><h2>설명회·시험지 모집 소식을 문자로 받아보세요</h2>
-      <p>학부모님 연락처만 남겨 주시면 가장 먼저 안내해 드립니다.</p></div>
-      <a class="btn btn-white btn-lg" href="/consult">문자 알림 신청하기 ${icon.arrow}</a>
-    </div>
-  </div>
-</section>`;
+</section>` : ''}`;
   return layout(ctx, { body });
 }
 
@@ -346,16 +326,16 @@ export function missingPage(ctx, { level, year, subject, done }) {
       total++;
       if (doneSet.has([school, year, subject, p].join('|'))) return '<td><span class="pill pill-done">완료</span></td>';
       open++;
-      return `<td><a class="pill pill-need" href="/exams?school=${encodeURIComponent(school)}">모집중</a></td>`;
+      return `<td><a class="pill pill-need" href="/exams?school=${encodeURIComponent(school)}">업로드 가능</a></td>`;
     }).join('')}</tr>`).join('')).join('');
   const body = `
-${pageHead('아직 안 올라온 시험지', `<span class="pill pill-need">모집중</span> 표시된 시험지를 올리면 ${won(S.reward.amount)}원을 받을 수 있어요.`)}
+${pageHead('아직 안 올라온 시험지', `<span class="pill pill-need">업로드 가능</span> 표시된 시험지를 올리면 ${won(S.reward.amount)}원을 받을 수 있어요.`)}
 <section class="sec sec-top">
   <div class="col">
     <div class="seg seg-link">${Object.entries(LEVELS).map(([l, label]) => `<a href="${q(year, '', l)}"${l === level ? ' class="active"' : ''}>${label}</a>`).join('')}</div>
     <div class="seg seg-link">${S.years.map((y) => `<a href="${q(y, subject)}"${y === year ? ' class="active"' : ''}>${esc(y)}</a>`).join('')}</div>
     <div class="tabs">${subjects(S, level).map((s) => `<a class="tab${s === subject ? ' active' : ''}" href="${q(year, s)}">${esc(s)}</a>`).join('')}</div>
-    <p class="muted"><b>${LEVELS[level]} · ${esc(year)} · ${esc(subject)}</b> — 모집중 <b class="accent">${open}</b>개 / 전체 ${total}개</p>
+    <p class="muted"><b>${LEVELS[level]} · ${esc(year)} · ${esc(subject)}</b> — 업로드 가능 <b class="accent">${open}</b>개 / 전체 ${total}개</p>
     <div class="table-wrap card">
       <table class="status-table">
         <thead><tr><th>학교</th>${papers.map((p) => `<th>${esc(p)}</th>`).join('')}</tr></thead>
@@ -400,14 +380,11 @@ ${pageHead('회원가입', '회원으로 올리면 시험지 확인 결과와 �
     ${field('비밀번호 확인', '<input type="password" name="password2" required minlength="8" maxlength="72" autocomplete="new-password">', { req: true })}
     ${field('학교', schoolSelect(S, v.school), { req: true })}
     ${field('학년', gradeSelect(v.grade), { req: true })}
-    ${field(isParent ? '자녀(학생) 이름' : '학생 이름', `<input name="student_name" required maxlength="20" value="${esc(v.student_name)}">`, { req: true })}
-    ${field('학부모 휴대폰 번호', `<input name="parent_phone" type="tel" inputmode="tel" placeholder="010-0000-0000" value="${esc(v.parent_phone)}"${isParent ? ' required' : ''}>`,
-      { req: isParent, hint: isParent ? '아이디를 잊으셨을 때 이 번호로 찾을 수 있어요.' : '' })}
-    ${field('학생 휴대폰 번호', `<input name="student_phone" type="tel" inputmode="tel" placeholder="010-0000-0000" value="${esc(v.student_phone)}"${isParent ? '' : ' required'}>`,
-      { req: !isParent, hint: isParent ? '선택 입력' : '아이디를 잊었을 때 이 번호로 찾을 수 있어요.' })}
+    ${field('동공아 카페 아이디 · 닉네임', `<input name="cafe_nick" required maxlength="30" placeholder="예: 동탄맘123 / 동공이네" value="${esc(v.cafe_nick)}">`, { req: true, hint: '동공아 카페에서 쓰는 아이디나 닉네임을 적어 주세요. 카페 활동 확인과 보상 안내에 씁니다.' })}
+    ${field('휴대폰 번호 (선택)', `<input name="phone" type="tel" inputmode="tel" placeholder="010-0000-0000" value="${esc(v.phone)}">`, { hint: '선택 입력 · 적어 두시면 아이디를 잊었을 때 이 번호로 찾을 수 있어요.' })}
     <div class="agree">
       <label><input type="checkbox" name="agree_privacy" required> <span><b>[필수]</b> 개인정보 수집·이용 동의</span></label>
-      <div class="agree-detail">· 수집 항목: 아이디, 비밀번호(암호화 저장), 학교, 학년, 학생 이름, 학생·학부모 휴대폰 번호<br>
+      <div class="agree-detail">· 수집 항목: 아이디, 비밀번호(암호화 저장), 동공아 카페 아이디·닉네임, 학교, 학년, 휴대폰 번호(입력한 경우)<br>
         · 이용 목적: 회원 관리, 시험지 확인 결과 및 보상 지급 안내<br>
         · 보유 기간: <b>회원 탈퇴 시까지</b> (탈퇴 시 즉시 삭제)<br>
         · 동의를 거부할 수 있으나, 거부하시면 회원가입이 불가합니다.</div>
@@ -450,13 +427,13 @@ ${pageHead('아이디 · 비밀번호 찾기')}
     <h2 class="card-title">아이디 찾기</h2>
     ${alertBox(error)}
     ${found ? `<div class="alert alert-ok">${found.length ? `가입된 아이디: <b>${found.map(esc).join(', ')}</b>` : '일치하는 회원 정보가 없습니다.'}</div>` : ''}
-    ${field('학생 이름', '<input name="student_name" required maxlength="20">')}
+    ${field('동공아 카페 아이디 · 닉네임', '<input name="cafe_nick" required maxlength="30">')}
     ${field('가입할 때 입력한 휴대폰 번호', '<input name="phone" type="tel" inputmode="tel" required placeholder="010-0000-0000">')}
     <button class="btn btn-brand btn-block">아이디 찾기</button>
   </form>
   <div class="card form-card">
     <h2 class="card-title">비밀번호를 잊으셨나요?</h2>
-    <p class="muted">${contact}<a href="/consult">상담 신청</a>에 아이디와 함께 "비밀번호 초기화"를 남겨 주세요. 본인 확인 후 임시 비밀번호를 안내해 드립니다.</p>
+    <p class="muted">${contact}<a href="/consult">문의 남기기</a>에 아이디와 함께 "비밀번호 초기화"를 남겨 주세요. 본인 확인 후 임시 비밀번호를 안내해 드립니다.</p>
   </div>
 </div></section>`;
   return layout(ctx, { title: '아이디·비밀번호 찾기', body, bare: true });
@@ -473,7 +450,7 @@ const statusPill = (u) => {
 export function myPage(ctx, { uploads, apps, ok = '', error = '' }) {
   const { S, user } = ctx;
   const body = `
-${pageHead(`${esc(user.student_name)} 님의 마이페이지`, `${user.type === 'parent' ? '학부모' : '학생'} 회원 · ${esc(user.username)}`)}
+${pageHead(`${esc(nameOf(user))} 님의 마이페이지`, `${user.type === 'parent' ? '학부모' : '학생'} 회원 · ${esc(user.username)}`)}
 <section class="sec sec-top"><div class="col narrow">
   ${alertBox(ok, 'ok')}${alertBox(error)}
   <div class="card form-card">
@@ -499,9 +476,8 @@ ${pageHead(`${esc(user.student_name)} 님의 마이페이지`, `${user.type === 
     <h2 class="card-title">내 정보</h2>
     ${field('학교', schoolSelect(S, user.school))}
     ${field('학년', gradeSelect(user.grade))}
-    ${field('학생 이름', `<input name="student_name" required maxlength="20" value="${esc(user.student_name)}">`)}
-    ${field('학부모 휴대폰 번호', `<input name="parent_phone" type="tel" inputmode="tel" value="${esc(user.parent_phone)}" placeholder="010-0000-0000">`)}
-    ${field('학생 휴대폰 번호', `<input name="student_phone" type="tel" inputmode="tel" value="${esc(user.student_phone)}" placeholder="010-0000-0000">`)}
+    ${field('동공아 카페 아이디 · 닉네임', `<input name="cafe_nick" required maxlength="30" value="${esc(user.cafe_nick)}">`)}
+    ${field('휴대폰 번호 (선택)', `<input name="phone" type="tel" inputmode="tel" value="${esc(user.parent_phone || user.student_phone)}" placeholder="010-0000-0000">`)}
     <label class="check"><input type="checkbox" name="agree_sms"${user.agree_sms ? ' checked' : ''}> 문자(SMS) 수신에 동의합니다.</label>
     <button class="btn btn-brand btn-block">저장하기</button>
   </form>

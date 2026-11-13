@@ -124,7 +124,7 @@ ${uploadTable(rows)}`);
         const reason = str(b.reason, 300);
         if (!reason) return back(here, '반려 사유를 입력해 주세요.', 'err');
         await db.prepare("UPDATE uploads SET status = 'rejected', reject_reason = ?, reviewed_at = ? WHERE id = ?").bind(reason, nowIso(), id).run();
-        return back(here, '반려했습니다. 이 시험지는 다시 모집중으로 바뀝니다.');
+        return back(here, '반려했습니다. 이 시험지는 다시 업로드 가능으로 바뀝니다.');
       }
       if (b.action === 'pending') {
         // 반려를 되돌릴 때, 그 사이 다른 사람이 같은 시험지를 올렸으면 막는다
@@ -270,10 +270,10 @@ ${rows.map((c) => `<tr class="${c.done ? 'dim' : ''}"><td>${kst(c.created_at)}</
   if (path === '/admin/users' && GET) {
     const rows = (await db.prepare('SELECT u.*, (SELECT COUNT(*) FROM uploads x WHERE x.user_id = u.id) AS ups FROM users u ORDER BY id DESC LIMIT 500').all()).results;
     return shell(ctx, '회원', `${flash(url)}
-<div class="table-wrap card"><table class="adm-table"><thead><tr><th>가입일</th><th>구분</th><th>아이디</th><th>학생</th><th>학교·학년</th><th>학부모 연락처</th><th>학생 연락처</th><th>문자</th><th>업로드</th><th></th></tr></thead><tbody>
-${rows.map((u) => `<tr><td>${kstDay(u.created_at)}</td><td>${u.type === 'parent' ? '학부모' : '학생'}</td><td>${esc(u.username)}</td><td>${esc(u.student_name)}</td><td>${esc(u.school)} ${esc(u.grade)}</td><td>${esc(u.parent_phone)}</td><td>${esc(u.student_phone)}</td><td>${u.agree_sms ? '동의' : '-'}</td><td>${u.ups}</td>
+<div class="table-wrap card"><table class="adm-table"><thead><tr><th>가입일</th><th>구분</th><th>아이디</th><th>카페 아이디·닉네임</th><th>학교·학년</th><th>휴대폰</th><th>문자</th><th>업로드</th><th></th></tr></thead><tbody>
+${rows.map((u) => `<tr><td>${kstDay(u.created_at)}</td><td>${u.type === 'parent' ? '학부모' : '학생'}</td><td>${esc(u.username)}</td><td>${esc(u.cafe_nick || u.student_name)}</td><td>${esc(u.school)} ${esc(u.grade)}</td><td>${esc([u.parent_phone, u.student_phone].filter(Boolean).join(' / '))}</td><td>${u.agree_sms ? '동의' : '-'}</td><td>${u.ups}</td>
 <td class="nowrap"><form method="post" action="/admin/users/${u.id}/reset" class="inline" data-confirm="${esc(u.username)} 회원의 비밀번호를 임시 비밀번호로 바꿀까요?"><button class="btn btn-sm btn-line">비밀번호 초기화</button></form>
-<form method="post" action="/admin/users/${u.id}/delete" class="inline" data-confirm="${esc(u.username)} 회원을 삭제할까요?"><button class="btn btn-sm btn-line">삭제</button></form></td></tr>`).join('') || '<tr><td colspan="10" class="empty">가입한 회원이 없습니다.</td></tr>'}
+<form method="post" action="/admin/users/${u.id}/delete" class="inline" data-confirm="${esc(u.username)} 회원을 삭제할까요?"><button class="btn btn-sm btn-line">삭제</button></form></td></tr>`).join('') || '<tr><td colspan="9" class="empty">가입한 회원이 없습니다.</td></tr>'}
 </tbody></table></div>${confirmScript}`);
   }
   if ((m = path.match(/^\/admin\/users\/(\d+)\/(reset|delete)$/)) && !GET) {

@@ -60,7 +60,7 @@ r = await guest.req('/exams/claim', { method: 'POST', json: { id: up1.id, token:
 ok(r.json().ok === true, 'bank claim saved', r.text);
 
 // 회원가입 / 로그인
-const acct = { type: 'parent', username: 'mom1234', password: 'password1', password2: 'password1', school: '이솔고', grade: '고1', student_name: '홍길동', parent_phone: '010-2222-3333', agree_privacy: 'on', agree_sms: 'on' };
+const acct = { type: 'parent', username: 'mom1234', password: 'password1', password2: 'password1', school: '이솔고', grade: '고1', cafe_nick: '홍길동맘', phone: '010-2222-3333', agree_privacy: 'on', agree_sms: 'on' };
 r = await member.req('/signup', { method: 'POST', form: { ...acct, password2: 'different' } });
 ok(r.status === 400 && r.text.includes('일치하지'), 'signup password mismatch');
 r = await member.req('/signup', { method: 'POST', form: { ...acct, next: '//evil.example' } });
@@ -73,7 +73,7 @@ r = await m2.req('/login', { method: 'POST', form: { username: 'mom1234', passwo
 ok(r.status === 400, 'login wrong password');
 r = await m2.req('/login', { method: 'POST', form: { username: 'mom1234', password: 'password1', next: '/exams' } });
 ok(r.status === 303 && r.loc === '/exams', 'login ok with next');
-r = await guest.req('/find', { method: 'POST', form: { student_name: '홍길동', phone: '01022223333' } });
+r = await guest.req('/find', { method: 'POST', form: { cafe_nick: '홍길동맘', phone: '01022223333' } });
 ok(r.text.includes('mo***34'), 'find id shows masked id');
 
 // 회원 업로드 → 쿠폰으로 받기
@@ -136,7 +136,7 @@ r = await guest.req('/notice/1'); ok(r.status === 200 && r.text.includes('href="
 await admin.req('/admin/seminars', { method: 'POST', form: { title: '예비고1 설명회', target: '예비고1 학부모님', date: '2099-12-06', when_text: '12월 6일 오후 5시', place: '동탄', sessions: '1차 오전 10시\n2차 오후 5시', body: '안내' } });
 await admin.req('/admin/seminars', { method: 'POST', form: { title: '지난 설명회', date: '2020-01-01' } });
 r = await guest.req('/seminars'); ok(r.text.includes('예비고1 설명회') && r.text.includes('종료된 설명회'), 'seminar list (open + ended)');
-ok((await guest.req('/')).text.includes('다가오는 설명회'), 'home shows upcoming seminar');
+ok(!(await guest.req('/')).text.includes('다가오는 설명회'), 'home no longer shows seminar section');
 r = await guest.req('/seminars/1/apply', { method: 'POST', form: { student_name: '김학생', school_grade: '동탄중3', parent_phone: '010-5555-6666', session: '2차 오후 5시', agree: 'on' } });
 ok(r.loc === '/seminars/1?done=1#apply', 'seminar apply ok', `${r.status} ${r.loc}`);
 r = await guest.req('/seminars/1/apply', { method: 'POST', form: { student_name: '김학생', school_grade: '동탄중3', parent_phone: '010-5555-6666', session: '2차 오후 5시', agree: 'on' } });
