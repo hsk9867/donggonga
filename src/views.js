@@ -1,7 +1,7 @@
 // 공개 페이지 화면
 import { esc, rich, won, kstDay, allSchools, subjects, schoolsOf, levelOf, LEVELS, GRADES, todayKst } from './lib.js';
 
-const V = '15'; // 정적 파일 캐시 버전
+const V = '16'; // 정적 파일 캐시 버전
 
 const NAV = [
   ['/exams', '시험지 업로드하기'],
@@ -104,9 +104,6 @@ ${body}
 </footer>
 ${bare ? '' : `<div class="fab">
   <a class="fab-btn fab-dark" href="/exams">📝 <b>시험지 업로드하기</b><span>${won(S.reward.amount)}원 보상</span></a>
-</div>
-<div class="dock">
-  <a class="dock-main" href="/exams">시험지 업로드하고 보상 받기</a>
 </div>`}
 <script src="/js/site.js?v=${V}" defer></script>
 ${scripts}

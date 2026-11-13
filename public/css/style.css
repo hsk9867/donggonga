@@ -384,7 +384,7 @@ details.danger form { margin-top: 16px; }
 .mylist .paid { margin-top: 8px; background: var(--green-50); color: var(--green); border-radius: 4px; padding: 10px 12px; font-size: .875rem; }
 
 /* ── 푸터 ── */
-.foot { border-top: 1px solid var(--line); background: var(--surface); padding-bottom: 88px; }
+.foot { border-top: 1px solid var(--line); background: var(--surface); padding-bottom: max(16px, env(safe-area-inset-bottom)); }
 .foot-in { max-width: 88rem; margin: 0 auto; padding: 48px 20px 32px; display: flex; flex-direction: column; gap: 32px; }
 .foot-label { margin-top: 20px; font-size: .75rem; font-weight: 700; color: var(--muted); }
 .foot-tel { display: block; font-size: 1.625rem; font-weight: 800; letter-spacing: -.02em; }
