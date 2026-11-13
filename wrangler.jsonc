@@ -3,6 +3,11 @@
   "main": "src/worker.js",
   "compatibility_date": "2025-01-01",
   "workers_dev": true,
+  // 도메인: 호스팅케이알에서 구매, 네임서버를 Cloudflare 로 바꾼 뒤 연결 (www 는 worker.js 에서 dtcenter.co.kr 로 이동)
+  "routes": [
+    { "pattern": "dtcenter.co.kr", "custom_domain": true },
+    { "pattern": "www.dtcenter.co.kr", "custom_domain": true }
+  ],
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",

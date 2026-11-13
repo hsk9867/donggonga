@@ -15,6 +15,8 @@ export default {
   async fetch(req, env) {
     if (!env.FILES) env = { ...env, FILES: d1Files(env.DB) }; // R2 가 없으면 D1 에 저장
     const url = new URL(req.url);
+    // www.dtcenter.co.kr 로 들어오면 dtcenter.co.kr 로 옮김 (주소 하나로 통일 → 로그인 쿠키·검색 노출이 한 곳에 모임)
+    if (url.hostname.startsWith('www.')) { url.hostname = url.hostname.slice(4); return Response.redirect(url.toString(), 301); }
     const path = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, '') : '/';
     try {
       if (/^\/(css|js|img)\//.test(path) || path === '/robots.txt') return env.ASSETS.fetch(req);
