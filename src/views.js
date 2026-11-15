@@ -1,7 +1,7 @@
 // 공개 페이지 화면
 import { esc, rich, won, kstDay, allSchools, subjects, schoolsOf, levelOf, LEVELS, GRADES, todayKst } from './lib.js';
 
-const V = '17'; // 정적 파일 캐시 버전
+const V = '18'; // 정적 파일 캐시 버전
 
 const NAV = [
   ['/exams', '시험지 업로드하기'],
@@ -151,7 +151,7 @@ export function homePage(ctx, { stats, need, bySchool, seminars, notices }) {
   const body = `
 <section class="hero">
   <span class="shape s1" aria-hidden="true"></span><span class="shape s2" aria-hidden="true"></span>
-  <div class="col hero-grid">
+  <div class="col hero-grid hero-solo">
     <div class="hero-copy">
       <h1><span>${esc(h.line1)}</span> <span class="mark">${esc(h.mark)}</span> <span>${esc(h.line3)}</span></h1>
       <p class="hero-sub">${esc(h.sub)}</p>
@@ -163,20 +163,6 @@ export function homePage(ctx, { stats, need, bySchool, seminars, notices }) {
       </form>
       <script type="application/json" id="school-data">${JSON.stringify(allSchools(S)).replace(/</g, '\\u003c')}</script>
     </div>
-    <aside class="card board sheet" aria-label="모집 중인 시험지">
-      <div class="board-head">
-        <h2>지금 업로드 중인 시험지</h2>
-        <p>최초등록자에 한해 지급해드립니다.</p>
-        <span class="sheet-stamp" aria-hidden="true"><small>보상</small><b>${amount}</b><small>원</small></span>
-      </div>
-      <ol class="board-list">
-        ${need.map((n, i) => `<li><a href="/exams?school=${encodeURIComponent(n.school)}">
-          <span class="q-no">${String(i + 1).padStart(2, '0')}</span>
-          <span class="q-body"><span class="board-school">${esc(n.school)}</span><span class="board-paper">${esc(n.subject)} · ${esc(n.paper)}</span></span>
-          <span class="omr"><i aria-hidden="true"></i>업로드 가능</span></a></li>`).join('')}
-      </ol>
-      <a class="btn btn-brand btn-block btn-lg" href="/exams">시험지 업로드하고 ${amount}원 받기</a>
-    </aside>
   </div>
 </section>
 

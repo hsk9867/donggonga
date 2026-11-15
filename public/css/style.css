@@ -705,3 +705,9 @@ input[type=checkbox], input[type=radio] { accent-color: var(--navy); }
   .up-drop svg { width: 36px; height: 36px; }
   .up-drop-t b { font-size: 1.05rem; white-space: nowrap; }
 }
+
+/* 메인 히어로: 오른쪽 카드 삭제 후 가운데 정렬 (2026-11-15) */
+.hero-solo { grid-template-columns: 1fr !important; justify-items: center; }
+.hero-solo .hero-copy { text-align: center; max-width: 46rem; }
+.hero-solo .hero-sub { margin-left: auto; margin-right: auto; }
+.hero-solo .search { margin-left: auto !important; margin-right: auto !important; }
