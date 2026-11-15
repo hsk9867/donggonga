@@ -66,13 +66,8 @@ async function route(ctx) {
     const school = url.searchParams.get('school') || '';
     return html(V.examsPage(ctx, { done: await doneKeys(db, S), preset: allSchools(S).includes(school) ? school : '' }));
   }
-  if (path === '/exams/missing' && GET) {
-    const level = url.searchParams.get('level') === 'middle' ? 'middle' : 'high';
-    const year = S.years.includes(url.searchParams.get('year')) ? url.searchParams.get('year') : S.years[0];
-    const subs = subjects(S, level);
-    const subject = subs.includes(url.searchParams.get('subject')) ? url.searchParams.get('subject') : subs[0];
-    return html(V.missingPage(ctx, { level, year, subject, done: await doneKeys(db, S) }));
-  }
+  // 시험지 현황 페이지는 삭제됨 (2026-11-15) — 예전 링크는 업로드 화면으로
+  if (path === '/exams/missing' && GET) return Response.redirect(new URL('/exams', url).toString(), 302);
   if (path === '/exams/upload' && !GET) return examUpload(ctx);
   if (path === '/exams/claim' && !GET) return examClaim(ctx, false);
   if (path === '/exams/claim/skip' && !GET) return examClaim(ctx, true);

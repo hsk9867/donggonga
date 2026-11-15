@@ -28,7 +28,7 @@ const upload = (c, { school = '가온고', year = '2026학년도', subject = '�
 const guest = new Client(), member = new Client(), admin = new Client();
 
 // 공개 페이지
-for (const p of ['/', '/exams', '/exams/missing', '/exams/missing?subject=' + encodeURIComponent('국어'), '/notice', '/seminars', '/consult', '/login', '/signup', '/signup?type=student', '/find', '/privacy', '/terms', '/css/style.css', '/js/exams.js', '/img/logo.png', '/img/favicon.png', '/img/og.png']) {
+for (const p of ['/', '/exams', '/notice', '/seminars', '/consult', '/login', '/signup', '/signup?type=student', '/find', '/privacy', '/terms', '/css/style.css', '/js/exams.js', '/img/logo.png', '/img/favicon.png', '/img/og.png']) {
   const r = await guest.req(p); ok(r.status === 200, `GET ${p}`, r.status);
 }
 ok((await guest.req('/nope')).status === 404, '404 page');
@@ -125,8 +125,10 @@ ok(decodeURIComponent(r.loc).includes('이미 접수'), 'cannot un-reject when s
 ok((await upload(guest, { school: '동탄중', subject: '수학', paper: '중1-1 중간' })).json().status === 'accepted', 'middle school paper accepted');
 ok((await upload(guest, { school: '동탄중', subject: '수학', paper: '공통수학1 중간' })).status === 400, 'high school paper rejected for middle school');
 ok((await upload(guest, { school: '가온고', subject: '역사', paper: '중1-1 중간' })).status === 400, 'middle school paper rejected for high school');
-r = await guest.req('/exams/missing?level=middle&subject=' + encodeURIComponent('역사'));
-ok(r.status === 200 && r.text.includes('능동중') && !r.text.includes('가온고</th>'), 'missing page middle level');
+r = await guest.req('/exams/missing');
+ok(r.status === 302 && r.loc?.endsWith('/exams'), 'old missing page redirects to /exams', r.status);
+r = await guest.req('/');
+ok(!r.text.includes('시험지 현황') && !r.text.includes('학교별 수집 현황') && !r.text.includes('/exams/missing'), 'home has no exam status');
 ok((await upload(guest, { subject: '기타', paper: '한문' })).json().status === 'accepted' && (await upload(guest, { subject: '기타', paper: '한문' })).json().status === 'accepted', 'multi subject accepts repeats');
 
 // 공지 · 설명회

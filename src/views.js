@@ -1,11 +1,10 @@
 // 공개 페이지 화면
 import { esc, rich, won, kstDay, allSchools, subjects, schoolsOf, levelOf, LEVELS, GRADES, todayKst } from './lib.js';
 
-const V = '16'; // 정적 파일 캐시 버전
+const V = '17'; // 정적 파일 캐시 버전
 
 const NAV = [
   ['/exams', '시험지 업로드하기'],
-  ['/exams/missing', '시험지 현황'],
   ['/notice', '공지사항'],
 ];
 
@@ -177,21 +176,9 @@ export function homePage(ctx, { stats, need, bySchool, seminars, notices }) {
           <span class="omr"><i aria-hidden="true"></i>업로드 가능</span></a></li>`).join('')}
       </ol>
       <a class="btn btn-brand btn-block btn-lg" href="/exams">시험지 업로드하고 ${amount}원 받기</a>
-      <a class="board-more" href="/exams/missing">아직 안 올라온 시험지 전체 보기 ${icon.chev}</a>
     </aside>
   </div>
 </section>
-
-<div class="fade">
-  <div class="col">
-    <h2 class="stats-title">동탄 학부모님들이 함께 채워 가는 기출 자료실</h2>
-    <ul class="stats">
-      <li><b>${won(stats.collected)}</b><span>모인 시험지</span></li>
-      <li><b>${won(stats.open)}</b><span>업로드 가능한 시험지</span></li>
-      <li><b>${won(stats.schools)}</b><span>참여 학교</span></li>
-    </ul>
-  </div>
-</div>
 
 <section class="sec">
   <div class="col">
@@ -204,19 +191,6 @@ export function homePage(ctx, { stats, need, bySchool, seminars, notices }) {
       <li class="card" data-reveal><span class="step-n">03</span><h3>${amount}원 보상 지급</h3>
         <p>확인이 끝나면 ${esc(methods)}으로 보내 드립니다. ${esc(S.reward.note)}</p></li>
     </ol>
-  </div>
-</section>
-
-<section class="sec">
-  <div class="col">
-    <div class="sec-head" data-reveal><h2>학교별 수집 현황</h2><a href="/exams/missing">전체 보기 ${icon.chev}</a></div>
-    <div class="grid3">
-      ${bySchool.map((b) => `<a class="card school-card" href="/exams?school=${encodeURIComponent(b.school)}" data-reveal>
-        <div class="school-top"><h3>${esc(b.school)}</h3><span class="pill ${b.done ? 'pill-done' : 'pill-need'}">${b.done ? `${b.done}건 수집` : '첫 시험지 업로드 가능'}</span></div>
-        <div class="bar"><i style="width:${Math.max(2, Math.round((b.done / b.total) * 100))}%"></i></div>
-        <p>${b.done} / ${b.total} · 남은 시험지 ${b.total - b.done}개</p>
-      </a>`).join('')}
-    </div>
   </div>
 </section>
 
