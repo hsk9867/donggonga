@@ -92,9 +92,7 @@ ${body}
     </div>
     <nav class="foot-nav" aria-label="바로가기">${NAV.map(([h, l]) => `<a href="${h}">${l}</a>`).join('')}</nav>
     <div class="foot-note">
-      <p>${esc(site.tagline)}</p>
-      <p class="muted">올려 주신 시험지는 학교별 내신 분석 자료로만 사용합니다.</p>
-    </div>
+      <p>${esc(site.tagline)}</p>    </div>
   </div>
   <div class="foot-bottom">
     <span>© ${new Date().getFullYear()} ${esc(site.name)}. All rights reserved.</span>
@@ -175,7 +173,7 @@ export function homePage(ctx, { stats, need, bySchool, seminars, notices }) {
       <li class="card" data-reveal><span class="step-n">02</span><h3>관리자 확인</h3>
         <p>문제가 잘 보이는지, 고르신 시험지가 맞는지 확인합니다. 회원은 마이페이지에서 결과를 볼 수 있어요.</p></li>
       <li class="card" data-reveal><span class="step-n">03</span><h3>${amount}원 보상 지급</h3>
-        <p>확인이 끝나면 ${esc(methods)}으로 보내 드립니다. ${esc(S.reward.note)}</p></li>
+        <p>확인이 끝나면 시험지 1건당 네이버페이 포인트 ${amount}원을 보내드립니다.</p></li>
     </ol>
   </div>
 </section>
