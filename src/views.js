@@ -336,7 +336,7 @@ ${pageHead('회원가입', '회원으로 올리면 시험지 확인 결과와 �
     ${field('비밀번호 확인', '<input type="password" name="password2" required minlength="8" maxlength="72" autocomplete="new-password">', { req: true })}
     ${field('학교', schoolSelect(S, v.school), { req: true })}
     ${field('학년', gradeSelect(v.grade), { req: true })}
-    ${field('동공아 카페 아이디 · 닉네임', `<input name="cafe_nick" required maxlength="30" placeholder="예: 동탄맘123 / 동공이네" value="${esc(v.cafe_nick)}">`, { req: true, hint: '동공아 카페에서 쓰는 아이디나 닉네임을 적어 주세요. 카페 활동 확인과 보상 안내에 씁니다.' })}
+    ${field('동공아 카페 아이디 · 닉네임', `<input name="cafe_nick" required maxlength="30" value="${esc(v.cafe_nick)}">`, { req: true, hint: '동공아 카페에서 쓰는 아이디나 닉네임을 적어 주세요. 카페 활동 확인과 보상 안내에 씁니다.' })}
     ${field('휴대폰 번호 (선택)', `<input name="phone" type="tel" inputmode="tel" placeholder="010-0000-0000" value="${esc(v.phone)}">`, { hint: '선택 입력 · 적어 두시면 아이디를 잊었을 때 이 번호로 찾을 수 있어요.' })}
     <div class="agree">
       <label><input type="checkbox" name="agree_privacy" required> <span><b>[필수]</b> 개인정보 수집·이용 동의</span></label>
