@@ -247,7 +247,7 @@ ${pageHead(`동탄 학교별 <span class="mark">내신자료</span>를 함께 �
           </ul>
           <label class="agree-box"><input type="checkbox" id="ex-agree">
             <span><b>자료 등록 및 이용 안내에 동의합니다.</b><br>
-            <span class="muted small">등록한 자료의 검토 및 승인 절차에 동의하며, 운영 기준에 맞지 않는 자료는 등록이 제한될 수 있습니다.${user ? '' : ` 비회원으로 등록하면 확인 결과를 볼 수 없어요. <a href="/login?next=/exams">로그인</a> · <a href="/signup?next=/exams">회원가입</a>`}</span></span></label>
+            <span class="muted small">등록한 자료의 검토 및 승인 절차에 동의하며, 운영 기준에 맞지 않는 자료는 등록이 제한될 수 있습니다.</span></span></label>
           <div class="alert alert-bad" id="ex-alert" role="alert" hidden></div>
         </section>
 

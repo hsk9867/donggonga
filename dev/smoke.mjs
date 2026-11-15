@@ -25,10 +25,10 @@ const upload = (c, { school = '가온고', year = '2026학년도', subject = '�
   return c.req('/exams/upload', { method: 'POST', body: fd });
 };
 
-const guest = new Client(), member = new Client(), admin = new Client();
+const guest = new Client(), member = new Client(), admin = new Client(), up = new Client();
 
 // 공개 페이지
-for (const p of ['/', '/exams', '/notice', '/seminars', '/consult', '/login', '/signup', '/signup?type=student', '/find', '/privacy', '/terms', '/css/style.css', '/js/exams.js', '/img/logo.png', '/img/favicon.png', '/img/og.png']) {
+for (const p of ['/', '/notice', '/seminars', '/consult', '/login', '/signup', '/signup?type=student', '/find', '/privacy', '/terms', '/css/style.css', '/js/exams.js', '/img/logo.png', '/img/favicon.png', '/img/og.png']) {
   const r = await guest.req(p); ok(r.status === 200, `GET ${p}`, r.status);
 }
 ok((await guest.req('/nope')).status === 404, '404 page');
@@ -40,18 +40,27 @@ ok((await guest.req('/admin/uploads/1/delete', { method: 'POST' })).status === 4
   ok(r.status === 403, 'cross-site POST rejected');
 }
 
-// 비회원 업로드 → 중복 → 보상 정보
-let r = await upload(guest, { agree: false });
-ok(r.status === 400, 'guest upload without agreement rejected');
-r = await upload(guest, { files: [new Blob(['<svg onload=alert(1)>'], { type: 'image/svg+xml' })] });
+// 비회원은 업로드 불가 (회원 전용)
+let r = await guest.req('/exams?school=' + encodeURIComponent('가온고'));
+ok(r.status === 303 || r.status === 302, 'guest /exams redirects', r.status);
+ok(decodeURIComponent(decodeURIComponent(r.loc || '')).startsWith('/login?next=/exams?school=가온고'), 'redirect keeps next', r.loc);
+r = await guest.req(r.loc); ok(r.text.includes('회원만'), 'login page explains members only');
+r = await upload(guest);
+ok(r.status === 401, 'guest upload blocked', r.status);
+
+// 업로드용 회원 → 업로드 → 중복 → 보상 정보
+r = await up.req('/signup', { method: 'POST', form: { type: 'parent', username: 'dad5678', password: 'password1', password2: 'password1', school: '가온고', grade: '고1', cafe_nick: '업로더', phone: '', agree_privacy: 'on' } });
+ok(r.status === 303, 'uploader signup', `${r.status} ${r.text.slice(0, 200)}`);
+ok((await up.req('/exams')).status === 200, 'member can open /exams');
+r = await upload(up, { files: [new Blob(['<svg onload=alert(1)>'], { type: 'image/svg+xml' })] });
 ok(r.json().status === 'unreadable', 'non-image file rejected');
-r = await upload(guest, { paper: '없는 시험지' });
+r = await upload(up, { paper: '없는 시험지' });
 ok(r.status === 400, 'unknown paper rejected');
-r = await upload(guest, { files: [jpeg(), pdf()] });
+r = await upload(up, { files: [jpeg(), pdf()] });
 const up1 = r.json();
-ok(up1.status === 'accepted' && up1.id && up1.token, 'guest upload accepted', r.text);
-ok((await upload(guest)).json().status === 'duplicate', 'second upload of same paper = duplicate');
-ok((await guest.req('/exams')).text.includes('가온고|2026학년도|수학|공통수학1 중간'), 'slot shown as done');
+ok(up1.status === 'accepted' && up1.id && up1.token, 'member upload accepted', r.text);
+ok((await upload(up)).json().status === 'duplicate', 'second upload of same paper = duplicate');
+ok((await up.req('/exams')).text.includes('가온고|2026학년도|수학|공통수학1 중간'), 'slot shown as done');
 r = await guest.req('/exams/claim', { method: 'POST', json: { id: up1.id, token: 'wrong', type: 'bank', name: 'a', phone: '01012345678', bank: '국민', holder: 'a', account_no: '12345678901' } });
 ok(r.status === 404, 'claim with wrong token rejected');
 r = await guest.req('/exams/claim', { method: 'POST', json: { id: up1.id, token: up1.token, type: 'bank', name: '김학부모', phone: '01012345678', bank: '', holder: '', account_no: '' } });
@@ -119,17 +128,17 @@ r = await upload(member, { school: '이솔고', subject: '영어', paper: '고1-
 const up3 = r.json();
 await admin.req(`/admin/uploads/${up3.id}/review`, { method: 'POST', form: { action: 'reject', reason: '2쪽이 흐려요' } });
 ok((await member.req('/my')).text.includes('2쪽이 흐려요'), 'reject reason visible to member');
-ok((await upload(guest, { school: '이솔고', subject: '영어', paper: '고1-1 영어 중간' })).json().status === 'accepted', 'rejected slot reopens');
+ok((await upload(up, { school: '이솔고', subject: '영어', paper: '고1-1 영어 중간' })).json().status === 'accepted', 'rejected slot reopens');
 r = await admin.req(`/admin/uploads/${up3.id}/review`, { method: 'POST', form: { action: 'pending' } });
 ok(decodeURIComponent(r.loc).includes('이미 접수'), 'cannot un-reject when slot was refilled');
-ok((await upload(guest, { school: '동탄중', subject: '수학', paper: '중1-1 중간' })).json().status === 'accepted', 'middle school paper accepted');
-ok((await upload(guest, { school: '동탄중', subject: '수학', paper: '공통수학1 중간' })).status === 400, 'high school paper rejected for middle school');
-ok((await upload(guest, { school: '가온고', subject: '역사', paper: '중1-1 중간' })).status === 400, 'middle school paper rejected for high school');
+ok((await upload(up, { school: '동탄중', subject: '수학', paper: '중1-1 중간' })).json().status === 'accepted', 'middle school paper accepted');
+ok((await upload(up, { school: '동탄중', subject: '수학', paper: '공통수학1 중간' })).status === 400, 'high school paper rejected for middle school');
+ok((await upload(up, { school: '가온고', subject: '역사', paper: '중1-1 중간' })).status === 400, 'middle school paper rejected for high school');
 r = await guest.req('/exams/missing');
 ok(r.status === 302 && r.loc?.endsWith('/exams'), 'old missing page redirects to /exams', r.status);
 r = await guest.req('/');
 ok(!r.text.includes('시험지 현황') && !r.text.includes('학교별 수집 현황') && !r.text.includes('/exams/missing'), 'home has no exam status');
-ok((await upload(guest, { subject: '기타', paper: '한문' })).json().status === 'accepted' && (await upload(guest, { subject: '기타', paper: '한문' })).json().status === 'accepted', 'multi subject accepts repeats');
+ok((await upload(up, { subject: '기타', paper: '한문' })).json().status === 'accepted' && (await upload(up, { subject: '기타', paper: '한문' })).json().status === 'accepted', 'multi subject accepts repeats');
 
 // 공지 · 설명회
 await admin.req('/admin/notices', { method: 'POST', form: { title: '첫 공지 <b>', body: '내용\nhttps://example.com', pinned: 'on' } });
@@ -153,11 +162,11 @@ r = await admin.req('/admin/settings', { method: 'POST', form: {
   schools: '동탄 내 학교: 가온고, 이솔고\n동탄 외 학교: 오산고', years: '2026학년도, 2025학년도', papers: '수학: 공통수학1 중간, 공통수학1 기말\n국어: 고1-1 국어 중간', multi: '',
   hero_line1: '우리 학교 시험지,', hero_mark: '올리면 보상이', hero_line3: '돌아옵니다.', hero_sub: '설명', site_name: '동공아', site_full: '동탄공부잘하는아이', site_tagline: '소개', site_phone: '031-000-0000' } });
 ok(decodeURIComponent(r.loc).includes('저장'), 'settings saved');
-r = await guest.req('/exams'); ok(r.text.includes('3,000원') && !r.text.includes('동탄국제고') && r.text.includes('오산고'), 'settings applied to exams page');
+r = await up.req('/exams'); ok(r.text.includes('3,000원') && !r.text.includes('동탄국제고') && r.text.includes('오산고'), 'settings applied to exams page');
 ok((await guest.req('/')).text.includes('031-000-0000'), 'phone shown in footer');
 
 // 회원 관리
-r = await admin.req('/admin/users/1/reset', { method: 'POST' });
+r = await admin.req('/admin/users/2/reset', { method: 'POST' });
 const temp = r.text.match(/<code>([^<]+)<\/code>/)?.[1];
 ok(r.status === 200 && temp, 'admin resets password (shown once, not in URL)');
 r = await new Client().req('/login', { method: 'POST', form: { username: 'mom1234', password: temp } }); ok(r.status === 303, 'login with temp password');

@@ -63,6 +63,8 @@ async function route(ctx) {
 
   // ── 시험지 ──
   if (path === '/exams' && GET) {
+    // 시험지 업로드는 회원만 (2026-11-16) — 비회원은 로그인 화면으로, 로그인 뒤 다시 이 화면으로
+    if (!ctx.user) return redirect('/login?next=' + encodeURIComponent(path + url.search));
     const school = url.searchParams.get('school') || '';
     return html(V.examsPage(ctx, { done: await doneKeys(db, S), preset: allSchools(S).includes(school) ? school : '' }));
   }
@@ -77,7 +79,8 @@ async function route(ctx) {
     ? html(V.signupPage(ctx, { type: url.searchParams.get('type') || 'parent', next: safeNext(url.searchParams.get('next')) }))
     : signup(ctx);
   if (path === '/login') return GET
-    ? (ctx.user ? redirect('/my') : html(V.loginPage(ctx, { type: url.searchParams.get('type') || 'parent', next: safeNext(url.searchParams.get('next')), notice: url.searchParams.get('joined') ? '가입이 완료되었습니다. 로그인해 주세요.' : '' })))
+    ? (ctx.user ? redirect('/my') : html(V.loginPage(ctx, { type: url.searchParams.get('type') || 'parent', next: safeNext(url.searchParams.get('next')), notice: url.searchParams.get('joined') ? '가입이 완료되었습니다. 로그인해 주세요.'
+      : safeNext(url.searchParams.get('next')).startsWith('/exams') ? '시험지 업로드는 회원만 할 수 있어요. 로그인하거나 회원가입해 주세요.' : '' })))
     : login(ctx);
   if (path === '/logout' && !GET) return redirect('/', { 'Set-Cookie': setCookie('dg_s', '', { maxAge: 0, secure: ctx.secure }) });
   if (path === '/find') return GET ? html(V.findPage(ctx, {})) : findId(ctx);
@@ -177,6 +180,7 @@ function sniff(bytes) {
 async function examUpload(ctx) {
   const { req, env, S, user } = ctx;
   const db = env.DB;
+  if (!user) return json({ status: 'error', message: '회원만 시험지를 올릴 수 있어요. 로그인 후 다시 시도해 주세요.' }, 401);
   if (Number(req.headers.get('Content-Length') || 0) > MAX_BODY_BYTES) return json({ status: 'error', message: '파일이 너무 커요. 사진 수를 줄이거나 나눠서 올려 주세요.' }, 413);
   if (await limited(db, 'up:' + ipOf(req), 20, 3600)) return json({ status: 'error', message: '잠시 후 다시 시도해 주세요. (업로드 횟수 초과)' }, 429);
 
@@ -186,7 +190,6 @@ async function examUpload(ctx) {
   if (!allSchools(S).includes(school) || !S.years.includes(year) || !(papersFor(S, school)[subject] || []).includes(paper)) {
     return json({ status: 'error', message: '학교·연도·과목·시험지를 다시 선택해 주세요.' }, 400);
   }
-  if (!user && fd.get('agree_no_reason') !== 'on') return json({ status: 'error', message: '안내 사항에 동의해 주세요.' }, 400);
 
   const files = fd.getAll('photos').filter((f) => typeof f !== 'string' && f.size > 0);
   if (!files.length) return json({ status: 'error', message: '시험지 사진을 한 장 이상 올려 주세요.' }, 400);
@@ -210,7 +213,7 @@ async function examUpload(ctx) {
   const ins = await db.prepare(`INSERT INTO uploads (token, user_id, school, year, subject, paper, file_count, amount, name, phone, created_at, ip)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .bind(token, user ? user.id : null, school, year, subject, paper, prepared.length, S.reward.amount,
-      user ? user.student_name : '', user ? (user.parent_phone || user.student_phone) : '', nowIso(), ipOf(req)).run();
+      user.cafe_nick || user.student_name || '', user.parent_phone || user.student_phone || '', nowIso(), ipOf(req)).run();
   const id = ins.meta.last_row_id;
 
   try {
