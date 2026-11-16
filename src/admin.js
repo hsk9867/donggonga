@@ -34,10 +34,21 @@ const flash = (url) => {
 const back = (to, msg, key = 'ok') => redirect(`${to}${to.includes('?') ? '&' : '?'}${key}=${encodeURIComponent(msg)}`);
 const formOf = async (req) => { try { return Object.fromEntries([...(await req.formData())].filter(([, v]) => typeof v === 'string')); } catch { return {}; } };
 
+// 관리자 비밀번호: 관리자 화면에서 바꾼 값(D1 settings 'admin_pw' 해시)이 있으면 그것, 없으면 ADMIN_PASSWORD 시크릿.
+// 로그인 쿠키에 비밀번호 버전을 넣어, 비밀번호를 바꾸면 다른 기기의 기존 로그인은 풀린다.
+async function adminPw(env) {
+  const row = await env.DB.prepare("SELECT v FROM settings WHERE k = 'admin_pw'").first();
+  if (row) { try { const v = JSON.parse(row.v); if (v.salt && v.hash) return v; } catch { /* 깨졌으면 시크릿 사용 */ } }
+  return env.ADMIN_PASSWORD ? { salt: 'adm', hash: (await hashPw(env.ADMIN_PASSWORD, 'adm')).hash, env: true } : null;
+}
+const adminTag = (pw) => 'admin:' + (pw.env ? 'env' : pw.hash.slice(0, 10));
+const checkAdminPw = async (pw, input) => !!pw && safeEq((await hashPw(String(input || ''), pw.salt)).hash, pw.hash);
+
 export async function handleAdmin(ctx) {
   const { req, env, path, url, S } = ctx;
   const db = env.DB;
   const GET = req.method !== 'POST';
+  const pw = await adminPw(env);
 
   // ── 로그인 ──
   if (path === '/admin/login') {
@@ -51,13 +62,13 @@ ${error ? `<div class="alert alert-bad">${esc(error)}</div>` : ''}
 <label class="f"><span class="f-l">관리자 비밀번호</span><input type="password" name="password" required autofocus autocomplete="current-password"></label>
 <button class="btn btn-brand btn-block btn-lg">로그인</button></form></body></html>`, error ? 400 : 200);
     if (GET) return page();
-    if (!env.ADMIN_PASSWORD) return page('ADMIN_PASSWORD 시크릿이 아직 설정되지 않았습니다.');
+    if (!pw) return page('ADMIN_PASSWORD 시크릿이 아직 설정되지 않았습니다.');
     if (await limited(db, 'adm:' + ipOf(req), 6, 600)) return page('로그인 시도가 너무 많습니다. 10분 뒤에 다시 시도해 주세요.');
     const b = await formOf(req);
-    if (!safeEq((await hashPw(String(b.password || ''), 'adm')).hash, (await hashPw(env.ADMIN_PASSWORD, 'adm')).hash)) return page('비밀번호가 올바르지 않습니다.');
-    return redirect('/admin', { 'Set-Cookie': setCookie('dg_a', await signToken(secretOf(env), 'admin', ADMIN_TTL), { maxAge: ADMIN_TTL, secure: ctx.secure, sameSite: 'Strict' }) });
+    if (!(await checkAdminPw(pw, b.password))) return page('비밀번호가 올바르지 않습니다.');
+    return redirect('/admin', { 'Set-Cookie': setCookie('dg_a', await signToken(secretOf(env), adminTag(pw), ADMIN_TTL), { maxAge: ADMIN_TTL, secure: ctx.secure, sameSite: 'Strict' }) });
   }
-  if ((await readToken(secretOf(env), cookies(req).dg_a)) !== 'admin') {
+  if (!pw || (await readToken(secretOf(env), cookies(req).dg_a)) !== adminTag(pw)) {
     return GET ? redirect('/admin/login') : json({ ok: false, message: '로그인이 필요합니다.' }, 401);
   }
   if (path === '/admin/logout' && !GET) return redirect('/admin/login', { 'Set-Cookie': setCookie('dg_a', '', { maxAge: 0, secure: ctx.secure, sameSite: 'Strict' }) });
@@ -297,8 +308,29 @@ ${rows.map((u) => `<tr><td>${kstDay(u.created_at)}</td><td>${u.type === 'parent'
   }
 
   // ── 설정 ──
+  if (path === '/admin/password' && !GET) {
+    const b = await formOf(req);
+    const to = '/admin/settings#admin-pw';
+    if (await limited(db, 'admpw:' + ipOf(req), 6, 600)) return back(to, '시도가 너무 많습니다. 10분 뒤에 다시 해 주세요.', 'err');
+    if (!(await checkAdminPw(pw, b.current))) return back(to, '현재 비밀번호가 올바르지 않습니다.', 'err');
+    const next = String(b.password || '');
+    if (next.length < 4 || next.length > 100) return back(to, '새 비밀번호는 4자 이상으로 입력해 주세요.', 'err');
+    if (next !== String(b.password2 || '')) return back(to, '새 비밀번호 확인이 일치하지 않습니다.', 'err');
+    const np = await hashPw(next);
+    await putSetting(db, 'admin_pw', { salt: np.salt, hash: np.hash, at: nowIso() });
+    return redirect('/admin/settings?ok=' + encodeURIComponent('관리자 비밀번호를 바꿨습니다. 다른 기기는 다시 로그인해야 합니다.'), {
+      'Set-Cookie': setCookie('dg_a', await signToken(secretOf(env), adminTag(np), ADMIN_TTL), { maxAge: ADMIN_TTL, secure: ctx.secure, sameSite: 'Strict' }),
+    });
+  }
+
   if (path === '/admin/settings') {
-    if (GET) return shell(ctx, '설정', flash(url) + settingsForm(S));
+    if (GET) return shell(ctx, '설정', flash(url) + settingsForm(S) + `
+<form method="post" action="/admin/password" class="form adm-settings" id="admin-pw" style="margin-top:32px">
+<h2>관리자 비밀번호 변경</h2>
+<label class="f"><span class="f-l">현재 비밀번호</span><input type="password" name="current" required autocomplete="current-password"></label>
+<label class="f"><span class="f-l">새 비밀번호 (4자 이상)</span><input type="password" name="password" required minlength="4" maxlength="100" autocomplete="new-password"></label>
+<label class="f"><span class="f-l">새 비밀번호 확인</span><input type="password" name="password2" required minlength="4" maxlength="100" autocomplete="new-password"></label>
+<button class="btn btn-brand">비밀번호 변경</button></form>`);
     const b = await formOf(req);
     const list = (s) => String(s || '').split(',').map((x) => x.trim().slice(0, 40)).filter(Boolean);
     const groups = (text) => String(text || '').split('\n').map((line) => {

@@ -185,6 +185,7 @@ export async function getSettings(db) {
   const S = structuredClone(DEFAULTS);
   const { results } = await db.prepare('SELECT k, v FROM settings').all();
   for (const row of results || []) {
+    if (row.k === 'admin_pw') continue; // 관리자 비밀번호 해시는 화면 설정에 섞지 않는다
     try {
       const v = JSON.parse(row.v);
       if (v && typeof v === 'object' && !Array.isArray(v) && row.k !== 'papers' && row.k !== 'papersMiddle') S[row.k] = { ...S[row.k], ...v };

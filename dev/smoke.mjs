@@ -174,6 +174,20 @@ r = await member.req('/my/password', { method: 'POST', form: { current: temp, pa
 r = await member.req('/my/delete', { method: 'POST', form: { current: 'newpassword1' } }); ok(r.loc === '/', 'delete account');
 ok((await member.req('/my')).loc?.startsWith('/login'), 'session dead after account deletion');
 r = await admin.req(`/admin/uploads/${up3.id}/delete`, { method: 'POST' }); ok(decodeURIComponent(r.loc).includes('삭제'), 'admin deletes upload');
+// 관리자 비밀번호 변경
+const admin2 = new Client();
+await admin2.req('/admin/login', { method: 'POST', form: { password: 'admin1234' } });
+r = await admin.req('/admin/password', { method: 'POST', form: { current: 'wrong', password: 'abcd', password2: 'abcd' } });
+ok(decodeURIComponent(r.loc).includes('현재 비밀번호'), 'admin pw change needs current password');
+r = await admin.req('/admin/password', { method: 'POST', form: { current: 'admin1234', password: 'abcd', password2: 'abce' } });
+ok(decodeURIComponent(r.loc).includes('일치'), 'admin pw confirm mismatch');
+r = await admin.req('/admin/password', { method: 'POST', form: { current: 'admin1234', password: 'newadmin9', password2: 'newadmin9' } });
+ok(decodeURIComponent(r.loc).includes('바꿨습니다'), 'admin pw changed');
+ok((await admin.req('/admin')).status === 200, 'current admin stays logged in');
+ok((await admin2.req('/admin')).loc === '/admin/login', 'other admin session logged out');
+ok((await new Client().req('/admin/login', { method: 'POST', form: { password: 'admin1234' } })).status === 400, 'old admin pw rejected');
+ok((await new Client().req('/admin/login', { method: 'POST', form: { password: 'newadmin9' } })).loc === '/admin', 'new admin pw works');
+ok(!(await admin.req('/admin/settings')).text.includes('"admin_pw"'), 'pw hash not leaked into settings');
 r = await admin.req('/admin/logout', { method: 'POST' }); ok((await admin.req('/admin')).loc === '/admin/login', 'admin logout');
 
 console.log(fails ? `\n${fails} FAILED` : '\nALL PASSED');
