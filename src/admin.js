@@ -111,7 +111,31 @@ ${error ? `<div class="alert alert-bad">${esc(error)}</div>` : ''}
     const rows = (await db.prepare(`SELECT * FROM uploads WHERE ${TABS[tab][1]} ORDER BY id DESC LIMIT 300`).all()).results;
     return shell(ctx, '시험지·보상', `${flash(url)}
 <div class="tabs">${Object.entries(TABS).map(([k, [l]]) => `<a class="tab${k === tab ? ' active' : ''}" href="/admin/uploads?tab=${k}">${l}</a>`).join('')}</div>
+${rows.length ? zipButton(`/admin/files.json?tab=${tab}`, `${TABS[tab][0]} 시험지 파일 한번에 받기 (ZIP)`, `동공아-${TABS[tab][0]}`) : ''}
 ${uploadTable(rows)}`);
+  }
+
+  // ── 파일 한번에 받기: 파일 목록만 주고, ZIP 은 관리자 브라우저(/js/admin-zip.js)에서 만든다
+  //    (Worker 무료 요금제는 요청당 CPU 10ms 라 서버에서 수백 MB 를 압축할 수 없다)
+  if (path === '/admin/files.json' && GET) {
+    const W = {
+      pending: "u.status = 'pending'", unpaid: "u.status = 'approved' AND u.paid_at IS NULL AND u.reward_type != 'none'",
+      paid: 'u.paid_at IS NOT NULL', rejected: "u.status = 'rejected'", all: '1 = 1',
+    };
+    const one = Number(url.searchParams.get('upload')) || 0;
+    const where = one ? 'u.id = ?' : W[url.searchParams.get('tab')] || W.all;
+    const st = db.prepare(`SELECT f.id, f.upload_id, f.r2_key, f.size, u.school, u.year, u.subject, u.paper, u.name
+      FROM upload_files f JOIN uploads u ON u.id = f.upload_id WHERE ${where} ORDER BY u.id DESC, f.id`);
+    const { results } = await (one ? st.bind(one) : st).all();
+    const clean = (s) => String(s || '').replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').trim();
+    const seq = {};
+    return json({
+      files: (results || []).map((f) => {
+        seq[f.upload_id] = (seq[f.upload_id] || 0) + 1;
+        const folder = clean(`#${f.upload_id} ${f.school} ${f.year} ${f.subject} ${f.paper}${f.name ? ' (' + f.name + ')' : ''}`);
+        return { url: `/admin/file/${f.id}`, size: f.size, path: `${folder}/${String(seq[f.upload_id]).padStart(2, '0')}.${f.r2_key.split('.').pop()}` };
+      }),
+    });
   }
 
   if ((m = path.match(/^\/admin\/uploads\/(\d+)(?:\/(review|pay|unpay|delete|reward))?$/))) {
@@ -376,6 +400,11 @@ function statePill(u) {
 }
 const rewardText = (u) => ({ bank: '계좌', coupon: '쿠폰', none: '받지 않음', '': '미입력' }[u.reward_type] || '');
 
+function zipButton(list, label, name) {
+  return `<p class="adm-zip"><button type="button" class="btn btn-line btn-sm" data-zip="${esc(list)}" data-zip-name="${esc(name)}">${esc(label)}</button>
+<span class="muted small" data-zip-msg aria-live="polite"></span></p><script src="/js/admin-zip.js?v=1" defer></script>`;
+}
+
 function uploadTable(rows) {
   return `<div class="table-wrap card"><table class="adm-table"><thead><tr><th>#</th><th>접수일</th><th>학교</th><th>연도</th><th>시험지</th><th>장수</th><th>올린 사람</th><th>받는 방법</th><th>상태</th></tr></thead><tbody>
 ${rows.map((u) => `<tr><td><a href="/admin/uploads/${u.id}">#${u.id}</a></td><td>${kst(u.created_at)}</td><td>${esc(u.school)}</td><td>${esc(u.year)}</td>
@@ -431,7 +460,7 @@ function uploadDetail(S, u, files) {
     </dl>
     ${review}
   </section>
-  <section><h2>올라온 파일</h2><div class="adm-files">${fileHtml || '<p class="empty">파일이 없습니다.</p>'}</div></section>
+  <section><h2>올라온 파일</h2>${files.length ? zipButton(`/admin/files.json?upload=${u.id}`, `이 접수 파일 한번에 받기 (ZIP)`, `동공아-접수${u.id}`) : ''}<div class="adm-files">${fileHtml || '<p class="empty">파일이 없습니다.</p>'}</div></section>
   ${pay ? `<section><h2>보상 지급</h2>${pay}</section>` : ''}
   ${u.paid_at ? '' : `<section><h2>지급 정보 (올린 사람이 입력)</h2>
   <form method="post" action="${a}/reward" class="card adm-form adm-grid">
